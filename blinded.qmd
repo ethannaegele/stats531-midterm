@@ -89,6 +89,8 @@ plt.show()
 
 ```
 
+## ARMA 
+
 Let's train a model to accurately reflect the data. First, let's try an autoregressive model - we notice that the model has lags that correlate well with the first 10, so, an autogregressive model should model it well. ARMA models do not work well with nonstationary data; we counter this with an ARIMA model that handles differencing. 
 
 
@@ -118,11 +120,6 @@ data.set_index('Date', inplace=True)
 data = data.asfreq('B')  # Business day frequency
 data['Open'] = data['Open'].ffill()
 
-# ARMA(2,0,2) model training
-# model = ARIMA(data['Open'], order=(2, 0, 2))
-# model_fit = model.fit()
-
-
 returns = np.log(data['Open']).diff().dropna()
 
 model = ARIMA(returns, order=(2,0,2))
@@ -136,7 +133,7 @@ plt.plot(returns.index, returns, label="Returns", color='yellow')
 plt.legend()
 ```
 
-We look at the AIC values of the ARMA models below.
+We look at the AIC values of the ARMA models below. The smallest AIC value is -3961.6, for ARMA (3, 1).
 
 \begin{table}[ht]
 \centering
@@ -154,9 +151,53 @@ AR(4) & -3972.8 & -3974.8 & -3972.4 & -3968.0 \\
 \label{tab:arma}
 \end{table}
 
+We graph an ARMA(3, 1) model below. It is not much different from ARMA(2, 2).
+
+```{python}
+#| echo: false
+import pandas as pd
+import numpy as np
+import matplotlib.pyplot as plt
+from statsmodels.tsa.arima_process import ArmaProcess
+from statsmodels.tsa.arima.model import ARIMA
+
+data = pd.read_csv("data/DAX_2010-2020.csv")
+
+# Clean date
+data['Date'] = pd.to_datetime(data['Date'], format='%m/%d/%Y')
+data = data.sort_values('Date')
+
+# Clean Open column
+data['Open'] = (
+    data['Open']
+    .str.replace('.', '', regex=False)
+    .str.replace(',', '.', regex=False)
+    .astype(float)
+)
+
+data.set_index('Date', inplace=True)
+data = data.asfreq('B')  # Business day frequency
+data['Open'] = data['Open'].ffill()
+
+returns = np.log(data['Open']).diff().dropna()
+
+model = ARIMA(returns, order=(3,0,1))
+result = model.fit()
+
+sim = result.simulate(nsimulations=len(returns))
+
+plt.figure(figsize=(10,4))
+plt.plot(returns.index, sim, label="ARMA(3,1) Simulation", color='blue')
+plt.plot(returns.index, returns, label="Returns", color='yellow')
+plt.legend()
+```
+
+## SARMA
 
 
 TODO ...
+
+
 
 
 
