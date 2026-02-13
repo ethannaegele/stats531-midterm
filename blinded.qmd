@@ -54,7 +54,7 @@ plt.show()
 
 ```
 
-The data above shows roughly nonstationary data. We look at the autocorrelation function below to see how much lags depend on each other. In general, what we can tell is that the first point has a high correlation with the lags that follow. 
+The data above shows roughly nonstationary data. We look at the autocorrelation function below to see how much lags depend on each other. In general, what we can tell is that the first point has a high correlation at the start - this is when lag is 0, so, it is, naturally high. The values that follow seem i.i.d..
 
 
 ```{python}
@@ -81,9 +81,11 @@ data['Open'] = (
 
 data.set_index('Date', inplace=True)
 
+log_returns = np.log(data['Open'] / data['Open'].shift(1)).dropna()
+
 
 fig, ax = plt.subplots(figsize=(10, 4))
-plot_acf(data['Open'], ax=ax)
+plot_acf(log_returns, ax=ax)
 plt.tight_layout()
 plt.show()
 
@@ -91,7 +93,7 @@ plt.show()
 
 ## ARMA 
 
-Let's train a model to accurately reflect the data. First, let's try an autoregressive model - we notice that the model has lags that correlate well with the first 10, so, an autogregressive model should model it well. ARMA models do not work well with nonstationary data; we counter this with an ARIMA model that handles differencing. 
+Let's train a model to accurately reflect the data. ARMA models do not work well with nonstationary data; we counter this with an ARIMA model that handles differencing. 
 
 
 ```{python}
@@ -194,6 +196,116 @@ plt.legend()
 
 ## SARMA
 
+The ARMA model can be written with a backshift operator, B, to represent the previous lag in a sequence. We can multiply a sequence by B in order to represent a lag farther back.
+
+$$ By_n = y_{n-1} $$
+$$ B^2 y_n = y_{n-2} $$
+$$ B^{12} y_n = y_{n-12} $$
+
+
+When we have an ARMA model with white noise $\epsilon_t$, we can represent the model simply with backshift operators and $\phi(B) = (1 - \phi_1 * B - \phi_2 * B^2  - ... \phi_p * B^p)$.
+
+$$ y_n = \phi_1 * y_{n-1} + \phi_2 * y_{n-2}  + ... \phi_p * y_{n-p}  + \epsilon_n $$
+$$ y_n - (\phi_1 * y_{n-1} + \phi_2 * y_{n-2}  + ... \phi_p * y_{n-p}) = \epsilon_n $$
+$$ y_n - (\phi_1 * B * y_{n} + \phi_2 * B^2 * y_{n}  + ... \phi_p * B^p * y_{n}) = \epsilon_n $$
+$$ (1 - \phi_1 * B - \phi_2 * B^2  - ... \phi_p * B^p) y_n = \epsilon_n $$
+$$ \phi (B) y_n = \epsilon_n$$
+
+
+In a seasonal model, we may only represent seasonal terms, ex, every 12. We can easily do this with the backshift operator with four functions, representing it as
+
+$$ \Phi(B^12) * \phi(B) y_t = \theta(B) * \theta(B^12) * \epsilon_t$$
+
+This example will give us regular lags, as well as lags for every 12 (seasonal lags). As stock changes prices rapidly, this is relevant to a DAX index. We test it out below.
+
+```{python}
+#| echo: false
+
+import pandas as pd
+import numpy as np
+import matplotlib.pyplot as plt
+from statsmodels.tsa.statespace.sarimax import SARIMAX
+
+# TODO: look into warning
+
+import warnings
+from statsmodels.tools.sm_exceptions import ConvergenceWarning
+
+# Suppress all warnings (careful!)
+warnings.filterwarnings("ignore")
+
+# Or suppress just SARIMAX starting parameter warnings
+warnings.filterwarnings("ignore", message="Non-stationary starting seasonal autoregressive")
+
+
+
+
+data = pd.read_csv("data/DAX_2010-2020.csv")
+
+data['Date'] = pd.to_datetime(data['Date'], format='%m/%d/%Y')
+data = data.sort_values('Date')
+
+data['Open'] = (
+    data['Open']
+    .str.replace('.', '', regex=False)
+    .str.replace(',', '.', regex=False)
+    .astype(float)
+)
+
+
+data.set_index('Date', inplace=True)
+data = data.asfreq('B')  # Business day frequency
+data['Open'] = data['Open'].ffill()
+
+returns = np.log(data['Open']).diff().dropna()
+
+model = SARIMAX(data['Open'],order=(2, 0, 2), trend='c', seasonal_order=(1, 0, 0, 12), enforce_stationarity=True)
+results = model.fit()
+
+
+sim = result.simulate(nsimulations=len(returns))
+
+plt.figure(figsize=(10,4))
+plt.plot(returns.index, sim, label="SARMA", color='green')
+plt.plot(returns.index, returns, label="Returns", color='yellow')
+plt.legend()
+
+
+```
+
+## Volatility histogram
+
+```{python}
+#| echo: false
+
+import numpy as np
+import matplotlib.pyplot as plt
+
+data = pd.read_csv("data/DAX_2010-2020.csv")
+
+data['Date'] = pd.to_datetime(data['Date'], format='%m/%d/%Y')
+data = data.sort_values('Date')
+
+data['Open'] = (
+    data['Open']
+    .str.replace('.', '', regex=False)
+    .str.replace(',', '.', regex=False)
+    .astype(float)
+)
+
+
+# Compute log returns
+log_returns = np.log(data['Open'] / data['Open'].shift(1)).dropna()
+
+# Plot histogram
+plt.figure(figsize=(8,5))
+plt.hist(log_returns, bins=50, edgecolor='black')
+plt.title('Histogram of Log Returns (Volatility)')
+plt.xlabel('Log Return')
+plt.ylabel('Frequency')
+plt.show()
+
+```
 
 TODO ...
 
