@@ -1,0 +1,164 @@
+---
+title: "STATS 531 - Midterm Project"
+author: 
+- Steven Anthony Leone
+- Ethan Naegele
+output: pdf_document
+bibliography: references.bib
+format:
+  pdf:
+    include-in-header:
+      text: |
+        \usepackage{fullpage}
+    header-includes:
+        - \usepackage{float}
+execute:
+  python: true
+---
+
+
+-----------
+
+
+We look into the DAX Stock Index in Germany in this project. We look at the daily stock price for the DAX index for every day in 2025 from a time series analysis perspective, and we see how accurate we can make a model that predicts future values based off of its lags.
+
+```{python}
+#| echo: false
+import pandas as pd
+import numpy as np
+import matplotlib.pyplot as plt
+
+data = pd.read_csv("data/DAX_2010-2020.csv")
+
+data['Date'] = pd.to_datetime(data['Date'], format='%m/%d/%Y')
+
+data = data.sort_values('Date')
+
+data['Open'] = (
+    data['Open']
+    .str.replace('.', '', regex=False)
+    .str.replace(',', '.', regex=False)
+    .astype(float)
+)
+
+data.set_index('Date', inplace=True)
+
+
+plt.figure(figsize=(10, 4))
+plt.plot(data['Open'], label = "DAX Open")
+plt.legend()
+plt.xlabel('Date')
+plt.ylabel('Price')
+plt.title("DAX 2025 – Open Prices")
+plt.show()
+
+```
+
+The data above shows roughly nonstationary data. We look at the autocorrelation function below to see how much lags depend on each other. In general, what we can tell is that the first point has a high correlation with the lags that follow. 
+
+
+```{python}
+#| echo: false
+import pandas as pd
+import numpy as np
+import matplotlib.pyplot as plt
+from statsmodels.graphics.tsaplots import plot_acf
+
+
+
+data = pd.read_csv("data/DAX_2010-2020.csv")
+
+data['Date'] = pd.to_datetime(data['Date'], format='%m/%d/%Y')
+data = data.sort_values('Date')
+
+data['Open'] = (
+    data['Open']
+    .str.replace('.', '', regex=False)
+    .str.replace(',', '.', regex=False)
+    .astype(float)
+)
+
+
+data.set_index('Date', inplace=True)
+
+
+fig, ax = plt.subplots(figsize=(10, 4))
+plot_acf(data['Open'], ax=ax)
+plt.tight_layout()
+plt.show()
+
+```
+
+Let's train a model to accurately reflect the data. First, let's try an autoregressive model - we notice that the model has lags that correlate well with the first 10, so, an autogregressive model should model it well. ARMA models do not work well with nonstationary data; we counter this with an ARIMA model that handles differencing. 
+
+
+```{python}
+#| echo: false
+import pandas as pd
+import numpy as np
+import matplotlib.pyplot as plt
+from statsmodels.tsa.arima_process import ArmaProcess
+from statsmodels.tsa.arima.model import ARIMA
+
+data = pd.read_csv("data/DAX_2010-2020.csv")
+
+# Clean date
+data['Date'] = pd.to_datetime(data['Date'], format='%m/%d/%Y')
+data = data.sort_values('Date')
+
+# Clean Open column
+data['Open'] = (
+    data['Open']
+    .str.replace('.', '', regex=False)
+    .str.replace(',', '.', regex=False)
+    .astype(float)
+)
+
+data.set_index('Date', inplace=True)
+data = data.asfreq('B')  # Business day frequency
+data['Open'] = data['Open'].ffill()
+
+# ARMA(2,0,2) model training
+# model = ARIMA(data['Open'], order=(2, 0, 2))
+# model_fit = model.fit()
+
+
+returns = np.log(data['Open']).diff().dropna()
+
+model = ARIMA(returns, order=(2,0,2))
+result = model.fit()
+
+sim = result.simulate(nsimulations=len(returns))
+
+plt.figure(figsize=(10,4))
+plt.plot(returns.index, sim, label="ARMA(2,2) Simulation", color='blue')
+plt.plot(returns.index, returns, label="Returns", color='yellow')
+plt.legend()
+```
+
+We look at the AIC values of the ARMA models below.
+
+\begin{table}[ht]
+\centering
+\begin{tabular}{lcccc}
+\hline
+ & MA(1) & MA(2) & MA(3) & MA(4) \\
+\hline
+AR(1) & -3965.5 & -3965.7 & -3972.9 & -3973.5 \\
+AR(2) & -3962.0 & -3966.6 & -3972.8 & -3971.7 \\
+AR(3) & -3961.6 & -3970.7 & -3974.7 & -3972.2 \\
+AR(4) & -3972.8 & -3974.8 & -3972.4 & -3968.0 \\
+\hline
+\end{tabular}
+\caption{ARMA Model Comparison}
+\label{tab:arma}
+\end{table}
+
+
+
+TODO ...
+
+
+
+
+# References 
