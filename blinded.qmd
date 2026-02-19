@@ -542,8 +542,77 @@ AR Order & 0 & 1 & 2 & 3 & 4 \\
 
 
 ####  Model Diagnosis
-We check causality and invertibility in this section.
+We check causality and invertibility in this section. Causality is when the AR process has all roots that lie outside the unit circle. Invertability is when the MA process has all roots that lie outside the unit circle. We diagnose our best solution, ARIMA (3,1,2) below.
 
+```{python}
+#| echo: false
+import pandas as pd
+import numpy as np
+import matplotlib.pyplot as plt
+
+data = pd.read_csv("data/DAX_2010-2020.csv")
+
+# Clean column names
+data.columns = data.columns.str.strip()
+
+data['Date'] = pd.to_datetime(data['Date'], format='%m/%d/%Y')
+data = data.sort_values('Date')
+
+data['Open'] = (
+    data['Open']
+    .str.replace('.', '', regex=False)
+    .str.replace(',', '.', regex=False)
+    .astype(float)
+)
+
+data.set_index('Date', inplace=True)
+data = data.loc[:'2018-12-31']
+
+# Deal with Warnings
+data = data.asfreq('B')
+data['Open'] = data['Open'].ffill()
+
+model = ARIMA(data['Open'], order=(3,1,2))
+result = model.fit()
+
+ar_roots = result.arroots
+# print("AR roots:", ar_roots)
+
+# MA roots
+ma_roots = result.maroots
+# print("MA roots:", ma_roots)
+
+# We remove outliers in the AR solutions so that our visualization does not suffer.
+ar_roots_plot = ar_roots[np.abs(ar_roots) < 10]
+
+def plot_roots_ax(ax, roots, title):
+    theta = np.linspace(0, 2*np.pi, 100)
+    x = np.cos(theta)
+    y = np.sin(theta)
+    
+    ax.plot(x, y, 'k--', label='Unit Circle')  # unit circle
+    ax.scatter(roots.real, roots.imag, color='red', s=100, label='Roots')
+    ax.axhline(0, color='grey', lw=1)
+    ax.axvline(0, color='grey', lw=1)
+    ax.set_xlabel('Real')
+    ax.set_ylabel('Imag')
+    ax.set_title(title)
+    ax.grid(True)
+    ax.set_aspect('equal', adjustable='datalim')
+    # ax.set_xlim(-1.5, 1.5)  # zoom to unit circle
+    # ax.set_ylim(-1.5, 1.5)
+    ax.legend()
+
+# Create side-by-side plots
+fig, axs = plt.subplots(1, 2, figsize=(8,4))
+
+plot_roots_ax(axs[0], ar_roots_plot, 'AR Roots (Zoomed)')
+plot_roots_ax(axs[1], ma_roots, 'MA Roots')
+
+plt.tight_layout()
+plt.show()
+
+```
 
 
 #### Residual Analysis
