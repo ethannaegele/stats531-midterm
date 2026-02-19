@@ -32,6 +32,8 @@ We look at the daily stock price open for the DAX index for every day from 2010 
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
+import matplotlib.patches as mpatches
+from matplotlib.legend_handler import HandlerPatch
 
 data = pd.read_csv("data/DAX_2010-2020.csv")
 
@@ -48,9 +50,33 @@ data['Open'] = (
 
 data.set_index('Date', inplace=True)
 
+
+flag_height = 0.1
+flag_width = 0.2
+# Colors: Black, Red, Gold
+colors = ['black', '#DD0000', '#FFCE00']
+patches = [mpatches.Rectangle((0, i*flag_height), flag_width, flag_height, 
+           color=colors[i]) for i in range(3)]
+flag_patch = mpatches.Patch(color='#FFCE00', label='DAX Open Prices')
+
+class HandlerFlag(HandlerPatch):
+    def create_artists(self, legend, orig_handle,
+                       xdescent, ydescent, width, height, fontsize, trans):
+        x = 0
+        y = 0
+        # Create three rectangles for the flag
+        p1 = mpatches.Rectangle((x, y), width, height/3, color='#FFCE00')
+        p2 = mpatches.Rectangle((x, y+height/3), width, height/3, color='#DD0000')
+        p3 = mpatches.Rectangle((x, y+2*height/3), width, height/3, color='black')
+        return [p1, p2, p3]
+flag_proxy = mpatches.Patch(color='none', label='DAX Open Prices')
+
 plt.figure(figsize=(10, 4))
 plt.plot(data['Open'], label = "DAX Open", color='#006400')
-plt.legend()
+plt.legend(
+    handles=[flag_proxy],
+    handler_map={flag_proxy: HandlerFlag()}
+)
 plt.xlabel('Date')
 plt.ylabel('Price')
 plt.title("DAX 2010-2020 – Open Prices")
@@ -84,9 +110,33 @@ data.set_index('Date', inplace=True)
 
 data['returns'] = np.log(data['Open']) - np.log(data['Open'].shift(1))
 
+
+flag_height = 0.1
+flag_width = 0.2
+# Colors: Black, Red, Gold
+colors = ['black', '#DD0000', '#FFCE00']
+patches = [mpatches.Rectangle((0, i*flag_height), flag_width, flag_height, 
+           color=colors[i]) for i in range(3)]
+flag_patch = mpatches.Patch(color='#FFCE00', label='DAX Return')
+
+class HandlerFlag(HandlerPatch):
+    def create_artists(self, legend, orig_handle,
+                       xdescent, ydescent, width, height, fontsize, trans):
+        x = 0
+        y = 0
+        # Create three rectangles for the flag
+        p1 = mpatches.Rectangle((x, y), width, height/3, color='#FFCE00')
+        p2 = mpatches.Rectangle((x, y+height/3), width, height/3, color='#DD0000')
+        p3 = mpatches.Rectangle((x, y+2*height/3), width, height/3, color='black')
+        return [p1, p2, p3]
+flag_proxy = mpatches.Patch(color='none', label='DAX Return')
+
 plt.figure(figsize=(10, 4))
 plt.plot(data['returns'], label = "DAX Returns", color='#006400')
-plt.legend()
+plt.legend(
+    handles=[flag_proxy],
+    handler_map={flag_proxy: HandlerFlag()}
+)
 plt.xlabel('Date')
 plt.ylabel('Price')
 plt.title("DAX 2010-2020 – Returns")
