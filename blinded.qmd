@@ -207,6 +207,51 @@ plt.tight_layout()
 plt.show()
 ```
 
+## Stationary vs Non Stationary - Augmented Dickey-Fuller Test
+
+
+Let us run the Augmented Dickey Fuller Test to verify our data is nonstationary.
+
+```{python}
+#| echo: false
+import pandas as pd
+import numpy as np
+import matplotlib.pyplot as plt
+from statsmodels.tsa.stattools import adfuller
+
+data = pd.read_csv("data/DAX_2010-2020.csv")
+
+data['Date'] = pd.to_datetime(data['Date'], format='%m/%d/%Y')
+data = data.sort_values('Date')
+data['Open'] = (
+    data['Open']
+    .str.replace('.', '', regex=False)
+    .str.replace(',', '.', regex=False)
+    .astype(float)
+)
+data.set_index('Date', inplace=True)
+
+
+result = adfuller(data['Open'].to_numpy())
+
+# Print and interpret the results
+print('ADF Statistic: %f' % result[0])
+print('p-value: %f' % result[1])
+print('Critical Values:')
+for key, value in result[4].items():
+    print('\t%s: %.3f' % (key, value))
+
+# Custom interpretation logic
+if result[1] <= 0.05:
+    print("Result: Reject H0 - Time series is likely stationary.")
+else:
+    print("Result: Fail to reject H0 - Time series is likely non-stationary.")
+
+```
+
+
+
+
 ## ARMA 
 
 Let's train a model to accurately reflect our observations from the exploratory data analysis. We start with an ARMA model. 
@@ -309,8 +354,16 @@ plt.plot(returns.index, sim, label="ARMA(3,1) Simulation", color='blue')
 plt.plot(returns.index, returns, label="Returns", color='yellow')
 plt.legend()
 ```
+###  Model Diagnosis
+TODO
+#### Causality and Invertibility
+TODO
+
+### Residual Analysis
+TODO
 
 ## SARMA
+
 
 
 
@@ -368,6 +421,11 @@ plt.legend()
 
 
 ```
+
+### Residual Analysis
+TODO
+
+
 
 ## Spectral Density Function 
 
@@ -429,34 +487,7 @@ plt.show()
 ```
 
 
-
-## Appendix
-
-TODO: Merge back in to SARMA
-
-SARMA Model
-
-The ARMA model can be written with a backshift operator, B, to represent the previous lag in a sequence. We can multiply a sequence by B in order to represent a lag farther back.
-
-$$ By_n = y_{n-1} $$
-$$ B^2 y_n = y_{n-2} $$
-$$ B^{12} y_n = y_{n-12} $$
-
-
-When we have an ARMA model with white noise $\epsilon_t$, we can represent the model simply with backshift operators and $\phi(B) = (1 - \phi_1 * B - \phi_2 * B^2  - ... \phi_p * B^p)$.
-
-$$ y_n = \phi_1 * y_{n-1} + \phi_2 * y_{n-2}  + ... \phi_p * y_{n-p}  + \epsilon_n $$
-$$ y_n - (\phi_1 * y_{n-1} + \phi_2 * y_{n-2}  + ... \phi_p * y_{n-p}) = \epsilon_n $$
-$$ y_n - (\phi_1 * B * y_{n} + \phi_2 * B^2 * y_{n}  + ... \phi_p * B^p * y_{n}) = \epsilon_n $$
-$$ (1 - \phi_1 * B - \phi_2 * B^2  - ... \phi_p * B^p) y_n = \epsilon_n $$
-$$ \phi (B) y_n = \epsilon_n$$
-
-
-In a seasonal model, we may only represent seasonal terms, ex, every 12. We can easily do this with the backshift operator with four functions, representing it as
-
-$$ \Phi(B^12) * \phi(B) y_t = \theta(B) * \theta(B^12) * \epsilon_t$$
-
-This example will give us regular lags, as well as lags for every 12 (seasonal lags). As stock changes prices rapidly, this is relevant to a DAX index. We test it out below.
+## GARCH
 
 
 
