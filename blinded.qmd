@@ -414,9 +414,14 @@ The highest spectral densities in our graphs above are at frequencies of 0.00036
 
 # Fitting Time Series Models
 
-### ARMA 
+Let's train models on time series data to accurately reflect our observations on the DAX Stock Index from the exploratory data analysis. The DAX Open Prices are nonstationary, while the returns are stationary. 
 
-Let's train a model to accurately reflect our observations from the exploratory data analysis. We start with an ARMA model. 
+### ARMA and ARIMA
+To capture autoregressive and moving average components, we use an autoregressive moving average model (ARMA) and and autoregressive integrated moving average model (ARIMA). The main difference is that the ARIMA model differences through its integrated component, which allows it to handle non stationary data; ARMA generally assumes stationary data. We show results below.
+
+
+TODO :Organize, redo. 
+
 
 
 ```{python}
@@ -524,7 +529,7 @@ TODO
 #### Residual Analysis
 TODO
 
-### SARMA
+### SARMA and SARIMA
 
 
 
