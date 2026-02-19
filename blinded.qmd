@@ -263,59 +263,42 @@ plt.tight_layout()
 plt.show()
 ```
 
-## Stationary vs Non Stationary - Augmented Dickey-Fuller Test
+## Stationary vs Non Stationary
 
-
-Let us run the Augmented Dickey Fuller Test to verify our data for the DAX Open is nonstationary, and the returns time series is stationary. 
+The time series graphs for DAX Opening prices look nonstationary through visual inspection, and the returns for DAX by day look stationary. We obtain empirical data to show whether the data is stationary or not through the Augmented Dickey Fuller Test. A time series model has a unit root if its first difference is stationary. For a linear time series model, this is equivalent to a $(1-B)$ factor in the AR specification. The Augmented Dickey Fuller Test will look for evidence of a unit root. We use the test to verify the DAX Opening prices are nonstationary, and the returns for the DAX stock index are stationary. 
 
 ```{python}
 #| echo: false
 import pandas as pd
-import numpy as np
-import matplotlib.pyplot as plt
 from statsmodels.tsa.stattools import adfuller
 
-data = pd.read_csv("data/DAX_2010-2020.csv")
+def adf_summary(series, name):
+    result = adfuller(series.dropna())
+    
+    output = {
+        "Series": name,
+        "ADF Statistic": result[0],
+        "p-value": result[1],
+        "Lags Used": result[2],
+        "Observations": result[3],
+        "Critical Value (1%)": result[4]['1%'],
+        "Critical Value (5%)": result[4]['5%'],
+        "Critical Value (10%)": result[4]['10%'],
+        "Stationary": "Yes" if result[1] <= 0.05 else "No"
+    }
+    
+    return pd.Series(output)
 
-data['Date'] = pd.to_datetime(data['Date'], format='%m/%d/%Y')
-data = data.sort_values('Date')
-data['Open'] = (
-    data['Open']
-    .str.replace('.', '', regex=False)
-    .str.replace(',', '.', regex=False)
-    .astype(float)
-)
-data.set_index('Date', inplace=True)
-data['returns'] = np.log(data['Open']) - np.log(data['Open'].shift(1))
+summary_table = pd.concat([
+    adf_summary(data['Open'], "DAX Open"),
+    adf_summary(data['returns'], "DAX Returns")
+], axis=1)
 
-
-result = adfuller(data['Open'].to_numpy())
-result_returns = adfuller(data['returns'].dropna().to_numpy())
-
-print('ADF Statistic for DAX Open: %f' % result[0])
-print('p-value: %f' % result[1])
-print('Critical Values:')
-for key, value in result[4].items():
-    print('\t%s: %.3f' % (key, value))
-
-if result[1] <= 0.05:
-    print("Result: Reject H0 - Time series for DAX Opening Prices is likely stationary.")
-else:
-    print("Result: Fail to reject H0 - Time series for DAX Opening Prices is likely non-stationary.")
-
-
-print('ADF Statistic for DAX Returns: %f' % result_returns[0])
-print('p-value: %f' % result_returns[1])
-print('Critical Values:')
-for key, value in result_returns[4].items():
-    print('\t%s: %.3f' % (key, value))
-
-if result_returns[1] <= 0.05:
-    print("Result: Reject H0 - Time series for DAX Returns is likely stationary.")
-else:
-    print("Result: Fail to reject H0 - Time series for DAX Returns is likely non-stationary.")
+summary_table
 
 ```
+
+Therefore, the DAX Opens has a p value of 0.603955, so, we fail to reject the null, and it is non stationary. On the other hand, the DAX Return has a p value of 0 after running the test. We reject the null and there is evidence to show that the data is stationary. 
 
 ## Spectral Density Function 
 
