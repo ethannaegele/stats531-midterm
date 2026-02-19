@@ -420,7 +420,7 @@ Let's train models on time series data to accurately reflect our observations on
 To capture autoregressive and moving average components, we use an autoregressive moving average model (ARMA) and autoregressive integrated moving average model (ARIMA). The main difference is that the ARIMA model differences through its integrated component, which allows it to handle non stationary data; ARMA generally assumes stationary data.
 
 
-Let's analyze the results of an ARIMA model on the DAX Open Prices; our visual analysis and ADF test revealed that the DAX Open Prices as a time series are nonstationary. Because of the COVID wave in 2020, for purposes of fitting a model, we use all results from Januray 1, 2010 to December 31, 2018. The best ARIMA model for DAX Open Prices is an ARIMA(2,0,3). The shape matches, and has a relatively low AIC of -3972.8 - it is trained and graphed on top of raw data below (note that it overlaps almost perfectly).
+Let's analyze the results of an ARIMA model on the DAX Open Prices; our visual analysis and ADF test revealed that the DAX Open Prices as a time series are nonstationary. Because of the COVID wave in 2020, for purposes of fitting a model, we use all results from Januray 1, 2010 to December 31, 2018. The best ARIMA model for DAX Open Prices is an ARIMA(3,1,2). The shape matches, and has a relatively low AIC of -3916.7  - it is trained and graphed on top of raw data below, overlapping almost perfectly.
 
 ```{python}
 #| echo: false
@@ -468,7 +468,7 @@ plt.show()
 ```
 
 
-The AIC values for the ARIMA models of different number of parameters (ex, ARIMA(1,0,1), ARIMA(2,0,2), etc.) are in the tables below. For AIC values, we use the full dataset (including COVID).
+The AIC values for the ARIMA models of different number of parameters (ex, ARIMA(1,0,1), ARIMA(2,0,2), etc.) are in the tables below.
 
 \begin{table}[ht]
 \centering
@@ -485,11 +485,11 @@ The AIC values for the ARIMA models of different number of parameters (ex, ARIMA
 \cmidrule(lr){2-6}
 AR Order & 0 & 1 & 2 & 3 & 4 \\
 \midrule
-0 & 13249.4 & 9463.7 & 6442.9 & 4258.6 & 2705.7 \\
-1 & -3967.5 & -3965.5 & -3965.7 & -3972.9 & -3973.5 \\
-2 & -3965.5 & -3962.1 & -3966.6 & -3972.8 & -3971.7 \\
-3 & -3965.5 & -3961.6 & -3970.7 & -3974.7 & -3972.2 \\
-4 & -3972.8 & -3972.8 & -3974.8 & -3972.4 & -3968.0 \\
+0 & 10629.7 & 7529.3 & 5005.4 & 3147.4 & 1892.3 \\
+1 & -3897.5 & -3895.6 & -3893.6 & -3893.5 & -3892.2 \\
+2 & -3895.6 & -3894.0 & -3892.1 & -3891.9 & -3891.6 \\
+3 & -3893.6 & -3892.4 & -3891.1 & -3898.6 & -3896.7 \\
+4 & -3893.6 & -3891.3 &  -3889.2 & -3896.6 & -3895.1 \\
 \bottomrule
 \end{tabular}
 }
@@ -506,11 +506,11 @@ AR Order & 0 & 1 & 2 & 3 & 4 \\
 \cmidrule(lr){2-6}
 AR Order & 0 & 1 & 2 & 3 & 4 \\
 \midrule
-0 & -3975.9 & -3973.9 & -3973.9 & -3980.9 & -3981.7 \\
-1 & -3973.9 & -3971.9 & -3974.8 & -3980.9 & -3979.7 \\
-2 & -3973.8 & -3974.5 & -3981.5 & -3983.1 & -3978 \\
-3 & -3980.8 & -3980.8 & -3979.4 & -3981.7 & -3979.8 \\
-4 & -3981.5 & -3979.5 & -3977.7 & -3978 & -3978.1 \\
+0 & -3905.2 & -3903.3 & -3901.3 & -3901.2 & -3899.9 \\
+1 & -3903.3 & -3901.3 & -3899.3 & -3899.3 & -3901.8 \\
+2 & -3901.3 & -3899.8 & -3916.6 & -3906 & -3903.5 \\
+3 & -3901.3 & -3899.3 & -3916.7 & -3904.1 & -3903.7 \\
+4 & -3899.8 & -3901.5 & -3903.9 & -3902.4 & -3915.5 \\
 \bottomrule
 \end{tabular}
 }
@@ -527,11 +527,11 @@ AR Order & 0 & 1 & 2 & 3 & 4 \\
 \cmidrule(lr){2-6}
 AR Order & 0 & 1 & 2 & 3 & 4 \\
 \midrule
-0 & -1992.4 & -3964.9 & -3962.9 & -3963 & -3970 \\
-1 & -2861.4 & -3963 & -3962.3 & -3960 & -3961 \\
-2 & -3256 & -3962.9 & -3960.2 & -3966 & -3963.8 \\
-3 & -3370.6 & -3969.9 & -3961.2 & -3963.8 & -3966.5 \\
-4 & -3470.9 & -3970.6 & -3966.7 & -3963.4 & -3967.9 \\
+0 & -2267.9 & -3893.6 & -3891.6 & -3889.7 & -3889.5 \\
+1 & -2939.6 & -3891.6 & -3889.6 & -3887.7 & -3885.7 \\
+2 & -3253.7 & -3889.7 & -3887.6 & -3887.4 & -3904.9 \\
+3 & -3378.4 & -3889.6 & -3885.7 & -3885.2 & -3888.2 \\
+4 & -3432 & -3888.1 & -3885.7 & -3883.3 & -3898.7 \\
 \bottomrule
 \end{tabular}
 }
@@ -541,18 +541,8 @@ AR Order & 0 & 1 & 2 & 3 & 4 \\
 \end{table}
 
 
-
-
-
-
-
-
 ####  Model Diagnosis
-Model diagnosis ...
-
-
-##### Causality and Invertibility
-TODO ...
+We check causality and invertibility in this section.
 
 
 
