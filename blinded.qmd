@@ -210,7 +210,7 @@ plt.show()
 ## Stationary vs Non Stationary - Augmented Dickey-Fuller Test
 
 
-Let us run the Augmented Dickey Fuller Test to verify our data is nonstationary.
+Let us run the Augmented Dickey Fuller Test to verify our data for the DAX Open is nonstationary, and the returns time series is stationary. 
 
 ```{python}
 #| echo: false
@@ -230,22 +230,34 @@ data['Open'] = (
     .astype(float)
 )
 data.set_index('Date', inplace=True)
+data['returns'] = np.log(data['Open']) - np.log(data['Open'].shift(1))
 
 
 result = adfuller(data['Open'].to_numpy())
+result_returns = adfuller(data['returns'].dropna().to_numpy())
 
-# Print and interpret the results
-print('ADF Statistic: %f' % result[0])
+print('ADF Statistic for DAX Open: %f' % result[0])
 print('p-value: %f' % result[1])
 print('Critical Values:')
 for key, value in result[4].items():
     print('\t%s: %.3f' % (key, value))
 
-# Custom interpretation logic
 if result[1] <= 0.05:
-    print("Result: Reject H0 - Time series is likely stationary.")
+    print("Result: Reject H0 - Time series for DAX Opening Prices is likely stationary.")
 else:
-    print("Result: Fail to reject H0 - Time series is likely non-stationary.")
+    print("Result: Fail to reject H0 - Time series for DAX Opening Prices is likely non-stationary.")
+
+
+print('ADF Statistic for DAX Returns: %f' % result_returns[0])
+print('p-value: %f' % result_returns[1])
+print('Critical Values:')
+for key, value in result_returns[4].items():
+    print('\t%s: %.3f' % (key, value))
+
+if result_returns[1] <= 0.05:
+    print("Result: Reject H0 - Time series for DAX Returns is likely stationary.")
+else:
+    print("Result: Fail to reject H0 - Time series for DAX Returns is likely non-stationary.")
 
 ```
 
