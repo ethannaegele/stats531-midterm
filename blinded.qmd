@@ -317,8 +317,94 @@ else:
 
 ```
 
+## Spectral Density Function 
+
+An estimator of the spectral density function determine a signal’s frequency context content from
+a time series sample. In this section, we look at the frequencies for the DAX Stock Prices and Returns. It splits data into overlapping segments, computes modified periodograms, and averages them to
+reduce the variance. Advantages of Welch’s method are that it provides a smooth and reliable
+estimate compared to alternatives.
+
+Below is an estimate calculated through the Welch's method with a 95% confidence interval. 
+
+```{python}
+#| echo: false
+import pandas as pd
+import numpy as np
+import matplotlib.pyplot as plt
+from statsmodels.tsa.arima_process import ArmaProcess
+from statsmodels.tsa.arima.model import ARIMA
+from scipy.signal import welch
+from scipy.stats import chi2
+
+data = pd.read_csv("data/DAX_2010-2020.csv")
+
+# Clean column names
+data.columns = data.columns.str.strip()
+
+data['Date'] = pd.to_datetime(data['Date'], format='%m/%d/%Y')
+data = data.sort_values('Date')
+
+data['Open'] = (
+    data['Open']
+    .str.replace('.', '', regex=False)
+    .str.replace(',', '.', regex=False)
+    .astype(float)
+)
+
+data.set_index('Date', inplace=True)
+
+nperseg = len(data['Open'])
+frequencies, psd = welch(data['Open'].to_numpy(), fs=1, nperseg=nperseg)
 
 
+
+plt.figure(figsize=(10, 4))
+plt.semilogy(frequencies, psd)
+plt.xlabel("Frequency")
+plt.ylabel("Spectral Density")
+plt.title("(Welch) Spectral Density of DAX Open Prices")
+plt.show()
+```
+
+```{python}
+#| echo: false
+import pandas as pd
+import numpy as np
+import matplotlib.pyplot as plt
+from statsmodels.tsa.arima_process import ArmaProcess
+from statsmodels.tsa.arima.model import ARIMA
+from scipy.signal import welch
+from scipy.stats import chi2
+
+data = pd.read_csv("data/DAX_2010-2020.csv")
+
+# Clean column names
+data.columns = data.columns.str.strip()
+
+data['Date'] = pd.to_datetime(data['Date'], format='%m/%d/%Y')
+data = data.sort_values('Date')
+
+data['Open'] = (
+    data['Open']
+    .str.replace('.', '', regex=False)
+    .str.replace(',', '.', regex=False)
+    .astype(float)
+)
+
+data.set_index('Date', inplace=True)
+data['returns'] = np.log(data['Open']) - np.log(data['Open'].shift(1))
+returns = data['returns'].dropna().to_numpy()
+
+nperseg = len(data['returns'])
+frequencies, psd = welch(returns, fs=1)
+
+plt.figure(figsize=(10, 4))
+plt.semilogy(frequencies, psd)
+plt.xlabel("Frequency")
+plt.ylabel("Spectral Density")
+plt.title("(Welch) Spectral Density of DAX Returns")
+plt.show()
+```
 
 ## ARMA 
 
@@ -495,64 +581,6 @@ TODO
 
 
 
-## Spectral Density Function 
-
-An estimator of the spectral density function determine a signal’s frequency context content from
-a time series sample. In this section, we look at the frequencies for the DAX Stock Prices and Returns. It splits data into overlapping segments, computes modified periodograms, and averages them to
-reduce the variance. Advantages of Welch’s method are that it provides a smooth and reliable
-estimate compared to alternatives.
-
-Below is an estimate calculated through the Welch's method with a 95% confidence interval. 
-
-```{python}
-#| echo: false
-import pandas as pd
-import numpy as np
-import matplotlib.pyplot as plt
-from statsmodels.tsa.arima_process import ArmaProcess
-from statsmodels.tsa.arima.model import ARIMA
-from scipy.signal import welch
-from scipy.stats import chi2
-
-data = pd.read_csv("data/DAX_2010-2020.csv")
-
-# Clean column names
-data.columns = data.columns.str.strip()
-
-data['Date'] = pd.to_datetime(data['Date'], format='%m/%d/%Y')
-data = data.sort_values('Date')
-
-data['Open'] = (
-    data['Open']
-    .str.replace('.', '', regex=False)
-    .str.replace(',', '.', regex=False)
-    .astype(float)
-)
-
-data.set_index('Date', inplace=True)
-
-nperseg = len(data['Open'])
-frequencies, psd = welch(data['Open'].to_numpy(), fs=1, nperseg=nperseg)
-
-N = len(data['Open'])
-K = N // (nperseg // 2) - 1
-nu = 2 * K
-
-alpha = 0.05
-lower_mult = nu / chi2.ppf(1 - alpha / 2, nu)
-upper_mult = nu / chi2.ppf(alpha / 2, nu)
-psd_low = psd * lower_mult
-psd_high = psd * upper_mult
-
-plt.figure(figsize=(6, 3))
-plt.semilogy(frequencies, psd)
-plt.fill_between(frequencies, psd_low, psd_high, color='blue', alpha=0.2, label=f'{int((1-alpha)*100)}% Confidence Interval')
-plt.xlabel("Frequency")
-plt.ylabel("Spectral Density")
-plt.title("Estimated Spectral Density of DAX")
-plt.show()
-
-```
 
 
 ## GARCH
