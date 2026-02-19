@@ -479,11 +479,11 @@ The AIC values for the ARIMA models of different number of parameters (ex, ARIMA
 \cmidrule(lr){2-6}
 AR Order & 0 & 1 & 2 & 3 & 4 \\
 \midrule
-0 & 0 & 0 & 0 & 0 & 0 \\
-1 & 0 & 0 & 0 & 0 & 0 \\
-2 & 0 & 0 & 0 & 0 & 0 \\
-3 & 0 & 0 & 0 & 0 & 0 \\
-4 & 0 & 0 & 0 & 0 & 0 \\
+0 & 13249.4 & 9463.7 & 6442.9 & 4258.6 & 2705.7 \\
+1 & -3967.5 & -3965.5 & -3965.7 & -3972.9 & -3973.5 \\
+2 & -3965.5 & -3962.1 & -3966.6 & -3972.8 & -3971.7 \\
+3 & -3965.5 & -3961.6 & -3970.7 & -3974.7 & -3972.2 \\
+4 & -3972.8 & -3972.8 & -3974.8 & -3972.4 & -3968.0 \\
 \bottomrule
 \end{tabular}
 \caption{AIC for $I = 0$}
@@ -508,24 +508,7 @@ AR Order & 0 & 1 & 2 & 3 & 4 \\
 \caption{AIC for $I = 1$}
 \end{subtable}
 \hfill
-\begin{subtable}{0.32\textwidth}
-\centering
-\small
-\begin{tabular}{lccccc}
-\toprule
- & \multicolumn{5}{c}{MA Order} \\
-\cmidrule(lr){2-6}
-AR Order & 0 & 1 & 2 & 3 & 4 \\
-\midrule
-0 & 0 & 0 & 0 & 0 & 0 \\
-1 & 0 & 0 & 0 & 0 & 0 \\
-2 & 0 & 0 & 0 & 0 & 0 \\
-3 & 0 & 0 & 0 & 0 & 0 \\
-4 & 0 & 0 & 0 & 0 & 0 \\
-\bottomrule
-\end{tabular}
-\caption{AIC for $I = 2$}
-\end{subtable}
+
 
 \end{table}
 
