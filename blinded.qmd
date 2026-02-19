@@ -49,7 +49,7 @@ data['Open'] = (
 data.set_index('Date', inplace=True)
 
 plt.figure(figsize=(10, 4))
-plt.plot(data['Open'], label = "DAX Open")
+plt.plot(data['Open'], label = "DAX Open", color='#006400')
 plt.legend()
 plt.xlabel('Date')
 plt.ylabel('Price')
@@ -85,7 +85,7 @@ data.set_index('Date', inplace=True)
 data['returns'] = np.log(data['Open']) - np.log(data['Open'].shift(1))
 
 plt.figure(figsize=(10, 4))
-plt.plot(data['returns'], label = "DAX Returns")
+plt.plot(data['returns'], label = "DAX Returns", color='#006400')
 plt.legend()
 plt.xlabel('Date')
 plt.ylabel('Price')
@@ -186,19 +186,19 @@ log_returns = np.log(data['Open'] / data['Open'].shift(1)).dropna()
 fig, axes = plt.subplots(1, 3, figsize=(18, 5))  # 1 row, 3 columns
 
 # Histogram 1: Returns
-axes[0].hist(data['returns'], bins=50, edgecolor='black')
+axes[0].hist(data['returns'], bins=50, edgecolor='black', color = '#006400')
 axes[0].set_title('Histogram of Returns')
 axes[0].set_xlabel('DAX Return')
 axes[0].set_ylabel('Frequency')
 
 # Histogram 2: Open
-axes[1].hist(data['Open'], bins=50, edgecolor='black')
+axes[1].hist(data['Open'], bins=50, edgecolor='black', color = '#006400')
 axes[1].set_title('Histogram of Open')
 axes[1].set_xlabel('DAX Open')
 axes[1].set_ylabel('Frequency')
 
 # Histogram 3: Log Returns (Volatility)
-axes[2].hist(log_returns, bins=50, edgecolor='black')
+axes[2].hist(log_returns, bins=50, edgecolor='black', color = '#006400')
 axes[2].set_title('Histogram of Volatility')
 axes[2].set_xlabel('Log Return')
 axes[2].set_ylabel('Frequency')
