@@ -420,7 +420,7 @@ Let's train models on time series data to accurately reflect our observations on
 To capture autoregressive and moving average components, we use an autoregressive moving average model (ARMA) and autoregressive integrated moving average model (ARIMA). The main difference is that the ARIMA model differences through its integrated component, which allows it to handle non stationary data; ARMA generally assumes stationary data.
 
 
-Let's analyze the results of an ARIMA model on the DAX Open Prices; our visual analysis and ADF test revealed that the DAX Open Prices as a time series are nonstationary. The best ARIMA model for DAX Open Prices is an ARIMA(0,0,0).
+Let's analyze the results of an ARIMA model on the DAX Open Prices; our visual analysis and ADF test revealed that the DAX Open Prices as a time series are nonstationary. Because of the COVID wave in 2020, for purposes of fitting a model, we use all results from Januray 1, 2010 to December 31, 2018. The best ARIMA model for DAX Open Prices is an ARIMA(2,0,3). The shape matches, and has a relatively low AIC of -3972.8 - it is trained and graphed on top of raw data below (note that it overlaps almost perfectly).
 
 ```{python}
 #| echo: false
@@ -445,25 +445,30 @@ data['Open'] = (
 )
 
 data.set_index('Date', inplace=True)
+data = data.loc[:'2018-12-31']
 
 # Deal with Warnings
 data = data.asfreq('B')
 data['Open'] = data['Open'].ffill()
 
-model = ARIMA(data['Open'], order=(2,0,2))
+model = ARIMA(data['Open'], order=(3,1,2))
 result = model.fit()
 
-sim = result.simulate(nsimulations=len(data['Open']))
+# In-sample prediction (in original scale)
+pred = result.predict(start=data.index[0], end=data.index[-1], typ='levels')
 
-plt.figure(figsize=(10,4))
-plt.plot(data['Open'].index, sim, label="ARIMA Simulation", color='blue')
-plt.plot(data['Open'].index, data['Open'], label="Open", color='yellow')
+plt.figure(figsize=(12,5))
+plt.plot(data.index, data['Open'], label='Actual Open', color='yellow')
+plt.plot(data.index, pred, label='ARIMA Predicted', color='blue')
+plt.title("DAX Open vs ARIMA(3,1,2) Prediction")
+plt.xlabel("Date")
+plt.ylabel("Price")
 plt.legend()
-
+plt.show()
 ```
 
 
-The AIC values for the ARIMA models of different number of parameters (ex, ARIMA(1,0,1), ARIMA(2,0,2), etc.) are in the tables below.
+The AIC values for the ARIMA models of different number of parameters (ex, ARIMA(1,0,1), ARIMA(2,0,2), etc.) are in the tables below. For AIC values, we use the full dataset (including COVID).
 
 \begin{table}[ht]
 \centering
@@ -473,6 +478,7 @@ The AIC values for the ARIMA models of different number of parameters (ex, ARIMA
 \begin{subtable}{0.32\textwidth}
 \centering
 \small
+\resizebox{\linewidth}{!}{
 \begin{tabular}{lccccc}
 \toprule
  & \multicolumn{5}{c}{MA Order} \\
@@ -486,30 +492,52 @@ AR Order & 0 & 1 & 2 & 3 & 4 \\
 4 & -3972.8 & -3972.8 & -3974.8 & -3972.4 & -3968.0 \\
 \bottomrule
 \end{tabular}
+}
 \caption{AIC for $I = 0$}
 \end{subtable}
 \hfill
 \begin{subtable}{0.32\textwidth}
 \centering
 \small
+\resizebox{\linewidth}{!}{
 \begin{tabular}{lccccc}
 \toprule
  & \multicolumn{5}{c}{MA Order} \\
 \cmidrule(lr){2-6}
 AR Order & 0 & 1 & 2 & 3 & 4 \\
 \midrule
-0 & 0 & 0 & 0 & 0 & 0 \\
-1 & 0 & 0 & 0 & 0 & 0 \\
-2 & 0 & 0 & 0 & 0 & 0 \\
-3 & 0 & 0 & 0 & 0 & 0 \\
-4 & 0 & 0 & 0 & 0 & 0 \\
+0 & -3975.9 & -3973.9 & -3973.9 & -3980.9 & -3981.7 \\
+1 & -3973.9 & -3971.9 & -3974.8 & -3980.9 & -3979.7 \\
+2 & -3973.8 & -3974.5 & -3981.5 & -3983.1 & -3978 \\
+3 & -3980.8 & -3980.8 & -3979.4 & -3981.7 & -3979.8 \\
+4 & -3981.5 & -3979.5 & -3977.7 & -3978 & -3978.1 \\
 \bottomrule
 \end{tabular}
+}
 \caption{AIC for $I = 1$}
 \end{subtable}
 \hfill
-
-
+\begin{subtable}{0.32\textwidth}
+\centering
+\small
+\resizebox{\linewidth}{!}{
+\begin{tabular}{lccccc}
+\toprule
+ & \multicolumn{5}{c}{MA Order} \\
+\cmidrule(lr){2-6}
+AR Order & 0 & 1 & 2 & 3 & 4 \\
+\midrule
+0 & -1992.4 & -3964.9 & -3962.9 & -3963 & -3970 \\
+1 & -2861.4 & -3963 & -3962.3 & -3960 & -3961 \\
+2 & -3256 & -3962.9 & -3960.2 & -3966 & -3963.8 \\
+3 & -3370.6 & -3969.9 & -3961.2 & -3963.8 & -3966.5 \\
+4 & -3470.9 & -3970.6 & -3966.7 & -3963.4 & -3967.9 \\
+\bottomrule
+\end{tabular}
+}
+\caption{AIC for $I = 2$}
+\end{subtable}
+\hfill
 \end{table}
 
 
