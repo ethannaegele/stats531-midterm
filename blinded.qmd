@@ -20,7 +20,12 @@ execute:
 -----------
 
 
-We look into the DAX Stock Index in Germany in this project. We look at the daily stock price for the DAX index for every day in 2025 from a time series analysis perspective, and we see how accurate we can make a model that predicts future values based off of its lags.
+We look into the DAX Stock Index in Germany, and investigate how we can model the stock's opening prices, volatility, and other features. The DAX index tracks the performance of the 40 largest companies listed on the Regulated Market of the Frankfurt Stock Exchange [@stoxx_dax_index]. They represent the diversified economy of Germany. It is generally known as the German equity benchmark, and has been around for over 30 years. We aim to model increases and decreases in the stock's open price and, as often seen in stock analysis, volatility.
+
+## Exploratory Data Analysis
+
+
+We look at the daily stock price open for the DAX index for every day from 2010 to 2020 from a time series analysis perspective below. 
 
 ```{python}
 #| echo: false
@@ -43,18 +48,84 @@ data['Open'] = (
 
 data.set_index('Date', inplace=True)
 
-
 plt.figure(figsize=(10, 4))
 plt.plot(data['Open'], label = "DAX Open")
 plt.legend()
 plt.xlabel('Date')
 plt.ylabel('Price')
-plt.title("DAX 2025 – Open Prices")
+plt.title("DAX 2010-2020 – Open Prices")
 plt.show()
 
 ```
 
-The data above shows roughly nonstationary data. We look at the autocorrelation function below to see how much lags depend on each other. In general, what we can tell is that the first point has a high correlation at the start - this is when lag is 0, so, it is, naturally high. The values that follow seem i.i.d..
+The data above for stock open shows a roughly nonstationary data. The mean is not constant, and we have a large dip in 2020, likely associated with covid. Below, we analyze our graph for volatility. 
+
+```{python}
+#| echo: false
+import pandas as pd
+import numpy as np
+import matplotlib.pyplot as plt
+
+
+data = pd.read_csv("data/DAX_2010-2020.csv")
+
+data['Date'] = pd.to_datetime(data['Date'], format='%m/%d/%Y')
+
+data = data.sort_values('Date')
+
+data['Open'] = (
+    data['Open']
+    .str.replace('.', '', regex=False)
+    .str.replace(',', '.', regex=False)
+    .astype(float)
+)
+
+data.set_index('Date', inplace=True)
+
+data['returns'] = np.log(data['Open']) - np.log(data['Open'].shift(1))
+
+plt.figure(figsize=(10, 4))
+plt.plot(data['returns'], label = "DAX Returns")
+plt.legend()
+plt.xlabel('Date')
+plt.ylabel('Price')
+plt.title("DAX 2010-2020 – Returns")
+plt.show()
+```
+
+Our returns in the graph above follow a more stationary pattern, and follow a more or less constant mean. 
+
+
+
+
+ We look at the autocorrelation function below to see how much lags depend on each other. We start with autocorrelation for DAX Open prices.
+
+```{python}
+#| echo: false
+import pandas as pd
+import numpy as np
+import matplotlib.pyplot as plt
+from statsmodels.graphics.tsaplots import plot_acf
+
+data = pd.read_csv("data/DAX_2010-2020.csv")
+
+data['Date'] = pd.to_datetime(data['Date'], format='%m/%d/%Y')
+data = data.sort_values('Date')
+data['Open'] = (
+    data['Open']
+    .str.replace('.', '', regex=False)
+    .str.replace(',', '.', regex=False)
+    .astype(float)
+)
+data.set_index('Date', inplace=True)
+
+fig, ax = plt.subplots(figsize=(10, 4))
+plot_acf(data['Open'], ax=ax)
+plt.tight_layout()
+plt.show()
+```
+
+Opening prices are all correlated highly from the original value to down until the 35th lag. Correlation drops slowly. A model that depends on many of its lags seems suitable. The autocorrelation for DAX Returns is below.
 
 
 ```{python}
@@ -64,36 +135,81 @@ import numpy as np
 import matplotlib.pyplot as plt
 from statsmodels.graphics.tsaplots import plot_acf
 
-
-
 data = pd.read_csv("data/DAX_2010-2020.csv")
 
 data['Date'] = pd.to_datetime(data['Date'], format='%m/%d/%Y')
 data = data.sort_values('Date')
-
 data['Open'] = (
     data['Open']
     .str.replace('.', '', regex=False)
     .str.replace(',', '.', regex=False)
     .astype(float)
 )
-
-
 data.set_index('Date', inplace=True)
+
+data['returns'] = np.log(data['Open']) - np.log(data['Open'].shift(1))
+
+fig, ax = plt.subplots(figsize=(10, 4))
+plot_acf(data['returns'].dropna(), ax=ax)
+plt.tight_layout()
+plt.show()
+```
+
+The returns are roughly i.i.d. They do not correlate much, and mostly fall within the shaded region. This means that the relationships between the first price return and its lags aren't as heavily correlated.
+
+Now we show the histogram for the opening prices, returns, and volatility. These display the shapes of our data. While returns and volatility are normally distributed, opening prices are more uniformally distributed. 
+
+```{python}
+#| echo: false
+import pandas as pd
+import numpy as np
+import matplotlib.pyplot as plt
+from statsmodels.graphics.tsaplots import plot_acf
+
+data = pd.read_csv("data/DAX_2010-2020.csv")
+
+data['Date'] = pd.to_datetime(data['Date'], format='%m/%d/%Y')
+data = data.sort_values('Date')
+data['Open'] = (
+    data['Open']
+    .str.replace('.', '', regex=False)
+    .str.replace(',', '.', regex=False)
+    .astype(float)
+)
+data.set_index('Date', inplace=True)
+
+data['returns'] = np.log(data['Open']) - np.log(data['Open'].shift(1))
 
 log_returns = np.log(data['Open'] / data['Open'].shift(1)).dropna()
 
 
-fig, ax = plt.subplots(figsize=(10, 4))
-plot_acf(log_returns, ax=ax)
+fig, axes = plt.subplots(1, 3, figsize=(18, 5))  # 1 row, 3 columns
+
+# Histogram 1: Returns
+axes[0].hist(data['returns'], bins=50, edgecolor='black')
+axes[0].set_title('Histogram of Returns')
+axes[0].set_xlabel('DAX Return')
+axes[0].set_ylabel('Frequency')
+
+# Histogram 2: Open
+axes[1].hist(data['Open'], bins=50, edgecolor='black')
+axes[1].set_title('Histogram of Open')
+axes[1].set_xlabel('DAX Open')
+axes[1].set_ylabel('Frequency')
+
+# Histogram 3: Log Returns (Volatility)
+axes[2].hist(log_returns, bins=50, edgecolor='black')
+axes[2].set_title('Histogram of Volatility')
+axes[2].set_xlabel('Log Return')
+axes[2].set_ylabel('Frequency')
+
 plt.tight_layout()
 plt.show()
-
 ```
 
 ## ARMA 
 
-Let's train a model to accurately reflect the data. ARMA models do not work well with nonstationary data; we counter this with an ARIMA model that handles differencing. 
+Let's train a model to accurately reflect our observations from the exploratory data analysis. We start with an ARMA model. 
 
 
 ```{python}
@@ -196,27 +312,7 @@ plt.legend()
 
 ## SARMA
 
-The ARMA model can be written with a backshift operator, B, to represent the previous lag in a sequence. We can multiply a sequence by B in order to represent a lag farther back.
 
-$$ By_n = y_{n-1} $$
-$$ B^2 y_n = y_{n-2} $$
-$$ B^{12} y_n = y_{n-12} $$
-
-
-When we have an ARMA model with white noise $\epsilon_t$, we can represent the model simply with backshift operators and $\phi(B) = (1 - \phi_1 * B - \phi_2 * B^2  - ... \phi_p * B^p)$.
-
-$$ y_n = \phi_1 * y_{n-1} + \phi_2 * y_{n-2}  + ... \phi_p * y_{n-p}  + \epsilon_n $$
-$$ y_n - (\phi_1 * y_{n-1} + \phi_2 * y_{n-2}  + ... \phi_p * y_{n-p}) = \epsilon_n $$
-$$ y_n - (\phi_1 * B * y_{n} + \phi_2 * B^2 * y_{n}  + ... \phi_p * B^p * y_{n}) = \epsilon_n $$
-$$ (1 - \phi_1 * B - \phi_2 * B^2  - ... \phi_p * B^p) y_n = \epsilon_n $$
-$$ \phi (B) y_n = \epsilon_n$$
-
-
-In a seasonal model, we may only represent seasonal terms, ex, every 12. We can easily do this with the backshift operator with four functions, representing it as
-
-$$ \Phi(B^12) * \phi(B) y_t = \theta(B) * \theta(B^12) * \epsilon_t$$
-
-This example will give us regular lags, as well as lags for every 12 (seasonal lags). As stock changes prices rapidly, this is relevant to a DAX index. We test it out below.
 
 ```{python}
 #| echo: false
@@ -273,15 +369,29 @@ plt.legend()
 
 ```
 
-## Volatility histogram
+## Spectral Density Function 
+
+An estimator of the spectral density function determine a signal’s frequency context content from
+a time series sample. In this section, we look at the frequencies for the DAX Stock Prices and Returns. It splits data into overlapping segments, computes modified periodograms, and averages them to
+reduce the variance. Advantages of Welch’s method are that it provides a smooth and reliable
+estimate compared to alternatives.
+
+Below is an estimate calculated through the Welch's method with a 95% confidence interval. 
 
 ```{python}
 #| echo: false
-
+import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
+from statsmodels.tsa.arima_process import ArmaProcess
+from statsmodels.tsa.arima.model import ARIMA
+from scipy.signal import welch
+from scipy.stats import chi2
 
 data = pd.read_csv("data/DAX_2010-2020.csv")
+
+# Clean column names
+data.columns = data.columns.str.strip()
 
 data['Date'] = pd.to_datetime(data['Date'], format='%m/%d/%Y')
 data = data.sort_values('Date')
@@ -293,23 +403,60 @@ data['Open'] = (
     .astype(float)
 )
 
+data.set_index('Date', inplace=True)
 
-# Compute log returns
-log_returns = np.log(data['Open'] / data['Open'].shift(1)).dropna()
+nperseg = len(data['Open'])
+frequencies, psd = welch(data['Open'].to_numpy(), fs=1, nperseg=nperseg)
 
-# Plot histogram
-plt.figure(figsize=(8,5))
-plt.hist(log_returns, bins=50, edgecolor='black')
-plt.title('Histogram of Log Returns (Volatility)')
-plt.xlabel('Log Return')
-plt.ylabel('Frequency')
+N = len(data['Open'])
+K = N // (nperseg // 2) - 1
+nu = 2 * K
+
+alpha = 0.05
+lower_mult = nu / chi2.ppf(1 - alpha / 2, nu)
+upper_mult = nu / chi2.ppf(alpha / 2, nu)
+psd_low = psd * lower_mult
+psd_high = psd * upper_mult
+
+plt.figure(figsize=(6, 3))
+plt.semilogy(frequencies, psd)
+plt.fill_between(frequencies, psd_low, psd_high, color='blue', alpha=0.2, label=f'{int((1-alpha)*100)}% Confidence Interval')
+plt.xlabel("Frequency")
+plt.ylabel("Spectral Density")
+plt.title("Estimated Spectral Density of DAX")
 plt.show()
 
 ```
 
-TODO ...
 
 
+## Appendix
+
+TODO: Merge back in to SARMA
+
+SARMA Model
+
+The ARMA model can be written with a backshift operator, B, to represent the previous lag in a sequence. We can multiply a sequence by B in order to represent a lag farther back.
+
+$$ By_n = y_{n-1} $$
+$$ B^2 y_n = y_{n-2} $$
+$$ B^{12} y_n = y_{n-12} $$
+
+
+When we have an ARMA model with white noise $\epsilon_t$, we can represent the model simply with backshift operators and $\phi(B) = (1 - \phi_1 * B - \phi_2 * B^2  - ... \phi_p * B^p)$.
+
+$$ y_n = \phi_1 * y_{n-1} + \phi_2 * y_{n-2}  + ... \phi_p * y_{n-p}  + \epsilon_n $$
+$$ y_n - (\phi_1 * y_{n-1} + \phi_2 * y_{n-2}  + ... \phi_p * y_{n-p}) = \epsilon_n $$
+$$ y_n - (\phi_1 * B * y_{n} + \phi_2 * B^2 * y_{n}  + ... \phi_p * B^p * y_{n}) = \epsilon_n $$
+$$ (1 - \phi_1 * B - \phi_2 * B^2  - ... \phi_p * B^p) y_n = \epsilon_n $$
+$$ \phi (B) y_n = \epsilon_n$$
+
+
+In a seasonal model, we may only represent seasonal terms, ex, every 12. We can easily do this with the backshift operator with four functions, representing it as
+
+$$ \Phi(B^12) * \phi(B) y_t = \theta(B) * \theta(B^12) * \epsilon_t$$
+
+This example will give us regular lags, as well as lags for every 12 (seasonal lags). As stock changes prices rapidly, this is relevant to a DAX index. We test it out below.
 
 
 
