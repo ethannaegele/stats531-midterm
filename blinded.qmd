@@ -22,7 +22,8 @@ execute:
 
 We look into the DAX Stock Index in Germany, and investigate how we can model the stock's opening prices, volatility, and other features. The DAX index tracks the performance of the 40 largest companies listed on the Regulated Market of the Frankfurt Stock Exchange [@stoxx_dax_index]. They represent the diversified economy of Germany. It is generally known as the German equity benchmark, and has been around for over 30 years. We aim to model increases and decreases in the stock's open price and, as often seen in stock analysis, volatility.
 
-## Exploratory Data Analysis
+# Exploratory Data Analysis
+### Introduction 
 
 
 We look at the daily stock price open for the DAX index for every day from 2010 to 2020 from a time series analysis perspective below. 
@@ -146,7 +147,7 @@ plt.show()
 Our returns in the graph above follow a more stationary pattern, and follow a more or less constant mean. 
 
 
-
+### Autocorrelation
 
  We look at the autocorrelation function below to see how much lags depend on each other. We start with autocorrelation for DAX Open prices.
 
@@ -213,6 +214,8 @@ plt.show()
 
 The returns are roughly i.i.d. They do not correlate much, and mostly fall within the shaded region. This means that the relationships between the first price return and its lags aren't as heavily correlated.
 
+### Distributions
+
 Now we show the histogram for the opening prices, returns, and volatility. These display the shapes of our data. While returns and volatility are normally distributed, opening prices are more uniformally distributed. 
 
 ```{python}
@@ -263,7 +266,7 @@ plt.tight_layout()
 plt.show()
 ```
 
-## Stationary vs Non Stationary
+### Stationary vs Non Stationary
 
 The time series graphs for DAX Opening prices look nonstationary through visual inspection, and the returns for DAX by day look stationary. We obtain empirical data to show whether the data is stationary or not through the Augmented Dickey Fuller Test. A time series model has a unit root if its first difference is stationary. For a linear time series model, this is equivalent to a $(1-B)$ factor in the AR specification. The Augmented Dickey Fuller Test will look for evidence of a unit root. We use the test to verify the DAX Opening prices are nonstationary, and the returns for the DAX stock index are stationary. 
 
@@ -300,14 +303,16 @@ summary_table
 
 Therefore, the DAX Opens has a p value of 0.603955, so, we fail to reject the null, and it is non stationary. On the other hand, the DAX Return has a p value of 0 after running the test. We reject the null and there is evidence to show that the data is stationary. 
 
-## Spectral Density Function 
+###  Spectral Density Function 
 
 An estimator of the spectral density function determine a signal’s frequency context content from
 a time series sample. In this section, we look at the frequencies for the DAX Stock Prices and Returns. It splits data into overlapping segments, computes modified periodograms, and averages them to
 reduce the variance. Advantages of Welch’s method are that it provides a smooth and reliable
 estimate compared to alternatives.
 
-Below is an estimate calculated through the Welch's method with a 95% confidence interval. 
+From the graphs, we may visually inspect the point at which the spectral density is the highest. This will be the dominant frequency. Thus, in the context of the DAX stock, the frequency at which we have our peak spectral density is the dominant rate at which an oscillation in the stock index happens.
+
+Below, we show frequency vs spectral density function of the DAX Open and Return values.
 
 ```{python}
 #| echo: false
@@ -347,6 +352,7 @@ plt.xlabel("Frequency")
 plt.ylabel("Spectral Density")
 plt.title("(Welch) Spectral Density of DAX Open Prices")
 plt.show()
+
 ```
 
 ```{python}
@@ -388,6 +394,10 @@ plt.ylabel("Spectral Density")
 plt.title("(Welch) Spectral Density of DAX Returns")
 plt.show()
 ```
+
+The highest spectral densities in our graphs above are at frequencies of 0.00036 and 0.3, which indicates that these are the dominant frequencies for DAX open and return values, respectively. 
+
+# Fitting Time Series Models
 
 ## ARMA 
 
