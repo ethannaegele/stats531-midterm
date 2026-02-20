@@ -1,8 +1,5 @@
 ---
 title: "STATS 531 - Midterm Project"
-author: 
-- Steven Anthony Leone
-- Ethan Naegele
 output: pdf_document
 bibliography: references.bib
 format:
@@ -892,7 +889,7 @@ plt.show()
 All solutions lie outside the unit circle. Therefore, they are all causal and invertible. 
 
 ##### Residuals
-Now we look at the residuals
+Now we look at the residuals.
 
 ```{python}
 #| echo: false
@@ -952,7 +949,7 @@ plt.show()
 
 
 ### SARMA and SARIMA
-
+We try adding a seasonal component to assess its benefits. It fits well, comparable to ARMA. 
 
 
 
@@ -1012,6 +1009,7 @@ plt.legend()
 
 
 ### GARCH
+We fit a GARCH model. 
 
 ```{python}
 #| echo: false
@@ -1129,12 +1127,6 @@ plt.legend()
 plt.show()
 
 ```
-
-# Limitations
-
-# Conclusion 
-
-
 
 
 # References 
