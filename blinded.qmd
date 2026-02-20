@@ -725,6 +725,84 @@ plt.show()
 
 ```
 
+Now, we look at AIC for every combination of parameters in ARIMA(p,d,q) for DAX returns.
+
+\begin{table}[ht]
+\centering
+\caption{AIC for ARIMA(p,d,q) Model Comparison}
+\label{tab:arma_all}
+
+\begin{subtable}{0.32\textwidth}
+\centering
+\small
+\resizebox{\linewidth}{!}{
+\begin{tabular}{lccccc}
+\toprule
+ & \multicolumn{5}{c}{MA Order} \\
+\cmidrule(lr){2-6}
+AR Order & 0 & 1 & 2 & 3 & 4 \\
+\midrule
+0 & 10629.7 & 7529.3 & 5005.4 & 3147.4 & 1892.3 \\
+1 & -3897.5 & -3895.6 & -3893.6 & -3893.5 & -3892.2 \\
+2 & -3895.6 & -3894 & -3892 & -3891.9 & -3891.6 \\
+3 & -3893.6 & -3892.4 & -3891.1 &  -3898.6 & -3896.7 \\
+4 & -3893.6 & -3891.3 & -3889.2 & -3896.6 & -3895.1 \\
+\bottomrule
+\end{tabular}
+}
+\caption{AIC for $I = 0$}
+\end{subtable}
+\hfill
+\begin{subtable}{0.32\textwidth}
+\centering
+\small
+\resizebox{\linewidth}{!}{
+\begin{tabular}{lccccc}
+\toprule
+ & \multicolumn{5}{c}{MA Order} \\
+\cmidrule(lr){2-6}
+AR Order & 0 & 1 & 2 & 3 & 4 \\
+\midrule
+0 & -3905.2 & -3903.3 & -3901.3 & -3901.2 & -3899.9 \\
+1 & -3903.3 & -3901.3 & -3899.3 & -3899.3 & -3901.8 \\
+2 & -3901.3 & -3899.8 & -3916.6 & -3906 & -3903.5 \\
+3 & -3901.2 & -3899.2 & -3916.7 & -3904.0 & -3903.7 \\
+4 & -3899.8 & -3901.5 & -3903.9 & -3902.4 & -3915.5 \\
+\bottomrule
+\end{tabular}
+}
+\caption{AIC for $I = 1$}
+\end{subtable}
+\hfill
+\begin{subtable}{0.32\textwidth}
+\centering
+\small
+\resizebox{\linewidth}{!}{
+\begin{tabular}{lccccc}
+\toprule
+ & \multicolumn{5}{c}{MA Order} \\
+\cmidrule(lr){2-6}
+AR Order & 0 & 1 & 2 & 3 & 4 \\
+\midrule
+0 & -2267.9 & -3893.6 & -3891.6& -3889.7 & -3889.5\\
+1 & -2939.6 & -3891.6 & -3889.6 & -3887.7 & -3885.7 \\
+2 & -3253.7 & -3889.7 & -3887.6 & -3887.4 & -3904.9 \\
+3 & -3378.4 & -3889.6 & -3885.7 &  -3885.2 & -3888.2 \\
+4 & -3432 & -3888.1 & -3885.7 & -3883.3 & -3898.7 \\
+\bottomrule
+\end{tabular}
+}
+\caption{AIC for $I = 2$}
+\end{subtable}
+\hfill
+\end{table}
+
+
+
+
+
+
+
 ##### Model Diagnosis
 Now we assess causality and invertability.
 
@@ -1005,8 +1083,8 @@ df2 = df2 * 100
 model_g11 = arch_model(df2,
                         vol='GARCH',
                         p=1,
-                        q=1).fit()
-print(model_g11.summary())
+                        q=1).fit(disp="off")
+# print(model_g11.summary())
 
 estimated_vol = model_g11.conditional_volatility
 
@@ -1018,7 +1096,6 @@ realized_vol = df2.rolling(window=5).std()  # 5-day window for smoothing. Includ
 realized_vol_v2 = df2**2
 
 
-plt.clf()
 plt.figure(figsize=(10, 5))
 
 plt.plot(df2.index, realized_vol, label='Realized Volatility (Smoothed Estimate)')
@@ -1031,8 +1108,6 @@ plt.legend()
 
 plt.show()
 
-
-plt.clf()
 plt.figure(figsize=(10, 5))
 
 plt.plot(df2.index, realized_vol_v2, label='Realized Volatility (Squared log returns)')
