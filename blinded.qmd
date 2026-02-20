@@ -422,14 +422,14 @@ plt.title("(Welch) Spectral Density of DAX Returns")
 plt.show()
 ```
 
-The highest spectral densities in our graphs above are at frequencies of 0.00036 and 0.3, which indicates that these are the dominant frequencies for DAX open and return values, respectively. 
+The highest spectral densities in our graphs above are at frequencies of 0.00036 and 0.3, which indicates that these are the dominant frequencies for DAX open and return values, respectively. The periods are 2777 and 3.3 for the dominant oscillation. These make sense, as, we have roughly 2777 data, so, there is one unique non stationary pattern for open prices. Returns are stationary, and repeat roughly every 3.3 stock measurements, which is roughly 3.3 days.
 
 # Fitting Time Series Models
 
 Let's train models on time series data to accurately reflect our observations on the DAX Stock Index from the exploratory data analysis. The DAX Open Prices are nonstationary, while the returns are stationary. 
 
 ### ARMA and ARIMA
-How do we forecast DAX Stock Prices and Returns? The exploratory data analysis reveals that we can depend on lags and differencing. This information is captured in an ARMA model.
+How do we forecast DAX Stock Prices and Returns? The exploratory data analysis reveals that these values depend on lags and differencing. This information is captured in an ARMA model.
 
 $$ y_n = \phi_1 y_{n-1} + \phi_2 y_{n-2} + \phi_3 y_{n-3} + \theta_1 \epsilon_n + \theta_2 \epsilon_{n-1} $$
 $$ y_n = \phi_1 B y_n + \phi_2 B^2 y_n + \phi_3 B^3 y_n + \theta_1 \epsilon_n + \theta_2 B \epsilon_n $$
@@ -440,7 +440,7 @@ $$ y_n \phi(B) = \theta(B) \epsilon_n $$
 #### DAX Open Prices
 
 
-Let's analyze the results of an ARIMA model on the DAX Open Prices; our visual analysis and ADF test revealed that the DAX Open Prices as a time series are nonstationary. Because of the COVID wave in 2020, for purposes of fitting a model, we use all results from Januray 1, 2010 to December 31, 2018. The best ARIMA model for DAX Open Prices is an ARIMA(3,1,2). The shape matches, and has a relatively low AIC of -3916.7  - it is trained and graphed on top of raw data below, overlapping almost perfectly.
+Let's analyze the results of an ARIMA model on the DAX Open Prices; our visual analysis and ADF test revealed that the DAX Open Prices as a time series are nonstationary. Because of the COVID wave in 2020, for purposes of fitting a model, we use all results from Januray 1, 2010 to December 31, 2018. The best ARIMA model for DAX Open Prices is an ARIMA(3,1,2). The shape matches, and has a relatively low AIC of -3916.7  - it is trained and graphed on top of raw data below, overlapping almost perfectly. Before measuring residuals, we compare models by $AIC = 2k -2ln(\hat{L})$, which punishes complexity and lack of goodness of fit. A lower AIC score tells us that the DAX Stock is modeled better.
 
 ```{python}
 #| echo: false
@@ -562,7 +562,7 @@ AR Order & 0 & 1 & 2 & 3 & 4 \\
 
 
 #####  Model Diagnosis
-We check causality and invertibility in this section. Causality is when the AR process has all roots that lie outside the unit circle. Invertability is when the MA process has all roots that lie outside the unit circle. We diagnose our best solution, ARIMA (3,1,2) below.
+We check causality and invertibility in this section. Causality is when the AR process has all roots that lie outside the unit circle. Invertability is when the MA process has all roots that lie outside the unit circle. We diagnose our best solution, ARIMA (3,1,2) below. As all roots lie outside the unit circle, our solution is both causal and invertible. 
 
 ```{python}
 #| echo: false
@@ -633,11 +633,10 @@ plt.tight_layout()
 plt.show()
 
 ```
-We therefore see that all roots lie outside the unit circle. Therefore, our solution is both causal and invertible. 
 
 
 ##### Residual Analysis
-Now we look at the residuals. 
+We look at the residuals. Both the qq plot and the histogram indicate that the residuals are normally distributed $\epsilon$ $\approx$ $N(0, \sigma^2)$. This indicates that the ARIMA(3,1,2) is a good fit.
 
 ```{python}
 #| echo: false
@@ -692,7 +691,7 @@ plt.show()
 ```
 
 #### DAX Returns
-Let's run the same procedure for the returns. The best model is ARIMA(3, 0, 4)
+Let's run the same procedure for the returns. The best model is ARIMA(3, 0, 4). The empirical and visual data shows that the returns are stationary, so, having do differencing component $(d = 0)$ makes sense for this data.
 
 
 ```{python}
@@ -822,7 +821,7 @@ AR Order & 0 & 1 & 2 & 3 & 4 \\
 
 
 ##### Model Diagnosis
-Now we assess causality and invertability.
+We assess causality and invertability. All solutions lie outside the unit circle. Therefore, our model is causal and invertible. 
 
 ```{python}
 #| echo: false
@@ -899,10 +898,9 @@ plt.show()
 
 ```
 
-All solutions lie outside the unit circle. Therefore, they are all causal and invertible. 
 
-##### Residuals
-Now we look at the residuals.
+##### Residual Analysis
+We look at the residuals. Both the qq plot and the histogram indicate that the residuals are normally distributed $\epsilon$ $\approx$ $N(0, \sigma^2)$. This indicates that the ARIMA(3,0,4) is a good fit.
 
 ```{python}
 #| echo: false
@@ -1046,7 +1044,7 @@ The SARIMA models for DAX Open prices and returns have AIC values of -3897.62388
 
 
 ### GARCH
-We fit a GARCH model. 
+A GARCH model can model volatility of the DAX Stock, shown below.
 
 ```{python}
 #| echo: false
@@ -1139,17 +1137,17 @@ realized_vol = df2.rolling(window=5).std()  # 5-day window for smoothing. Includ
 realized_vol_v2 = df2**2
 
 
-plt.figure(figsize=(10, 2))
+# plt.figure(figsize=(10, 2))
 
-plt.plot(df2.index, realized_vol, label='Realized Volatility (Smoothed Estimate)')
-plt.plot(df2.index, estimated_vol, label='Model Estimated Volatility')
+# plt.plot(df2.index, realized_vol, label='Realized Volatility (Smoothed Estimate)')
+# plt.plot(df2.index, estimated_vol, label='Model Estimated Volatility')
 
-plt.xlabel('Date')
-plt.ylabel('Volatility')
-plt.title('Realized vs Estimated Volatility')
-plt.legend()
+# plt.xlabel('Date')
+# plt.ylabel('Volatility')
+# plt.title('Realized vs Estimated Volatility')
+# plt.legend()
 
-plt.show()
+# plt.show()
 
 plt.figure(figsize=(10, 2))
 
