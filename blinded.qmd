@@ -27,13 +27,13 @@ jupyter: python3
 ---
 
 
-We look into the DAX Stock Index in Germany, and investigate how we can model the stock's opening prices, volatility, and other features. The DAX index tracks the performance of the 40 largest companies listed on the Regulated Market of the Frankfurt Stock Exchange [@stoxx_dax_index]. They represent the diversified economy of Germany. It is generally known as the German equity benchmark, and has been around for over 30 years. We aim to model increases and decreases in the stock's open price and, as often seen in stock analysis, volatility.
+We look into the DAX Stock Index in Germany, and investigate how we can model the stock's opening prices, volatility, and other features. The DAX index tracks the performance of the 40 largest companies listed on the Regulated Market of the Frankfurt Stock Exchange [@stoxx_dax_index]. They represent the diversified economy of Germany. The DAX is generally known as the German equity benchmark, surviving for over 30 years. We aim to model increases and decreases in the stock's open price and, as often seen in stock analysis, volatility.
 
 # Exploratory Data Analysis
 ### Introduction 
 
 
-We look at the daily stock price open for the DAX index for every day from 2010 to 2020 from a time series analysis perspective below. 
+We look at the daily stock price open for the DAX index for every day from 2010 to 2020 through a time series graph. The data above for stock open shows a roughly nonstationary data. The mean is not constant, and we have a large dip in 2020, likely associated with covid. 
 
 ```{python}
 #| echo: false
@@ -92,7 +92,7 @@ plt.show()
 
 ```
 
-The data above for stock open shows a roughly nonstationary data. The mean is not constant, and we have a large dip in 2020, likely associated with covid. Below, we analyze our graph for volatility. 
+Now analyze volatility for the DAX stock, calculated as $y_n = log(z_n) - log(z_{n-1})$ [@ionides2026_time_series_intro].
 
 ```{python}
 #| echo: false
@@ -151,12 +151,12 @@ plt.title("DAX 2010-2020 – Returns")
 plt.show()
 ```
 
-Our returns in the graph above follow a more stationary pattern, and follow a more or less constant mean. 
+Through visual inspection, volatility is stationary with a more or less constant mean. 
 
 
 ### Autocorrelation
 
- We look at the autocorrelation function below to see how much lags depend on each other. We start with autocorrelation for DAX Open prices.
+ We look at the autocorrelation function below to see how much lags depend on each other. DAX opening prices are all highly correlated from the original value down until the 35th lag. Correlation then drops slowly. This tells us that a model that depends on its lags seems suitable.
 
 ```{python}
 #| echo: false
@@ -186,7 +186,7 @@ plt.tight_layout()
 plt.show()
 ```
 
-Opening prices are all correlated highly from the original value to down until the 35th lag. Correlation drops slowly. A model that depends on many of its lags seems suitable. The autocorrelation for DAX Returns is below.
+The autocorrelation graph for DAX Returns is below. The correlation of the returns are such that they could be i.i.d.. This means that the relationships between the first price return and its lags aren't as heavily correlated.
 
 
 ```{python}
@@ -218,8 +218,6 @@ plt.title('DAX Returns Autocorrelation')
 plt.tight_layout()
 plt.show()
 ```
-
-The returns are roughly i.i.d. They do not correlate much, and mostly fall within the shaded region. This means that the relationships between the first price return and its lags aren't as heavily correlated.
 
 ### Distributions
 
@@ -265,8 +263,8 @@ axes[1].set_ylabel('Frequency')
 
 # Histogram 3: Log Returns (Volatility)
 axes[2].hist(log_returns, bins=50, edgecolor='black', color = '#006400')
-axes[2].set_title('Histogram of Volatility')
-axes[2].set_xlabel(r'Log Return: $\sigma$ = {:.4f}'.format(np.std(log_returns)))
+axes[2].set_title(r'Histogram of $Y_n / Y_{n-1}$')
+axes[2].set_xlabel('Y_n / Y_(n-1): $\sigma$ = {:.4f}'.format(np.std(log_returns)))
 axes[2].set_ylabel('Frequency')
 
 plt.tight_layout()
@@ -275,7 +273,14 @@ plt.show()
 
 ### Stationary vs Non Stationary
 
-The time series graphs for DAX Opening prices look nonstationary through visual inspection, and the returns for DAX by day look stationary. We obtain empirical data to show whether the data is stationary or not through the Augmented Dickey Fuller Test. A time series model has a unit root if its first difference is stationary. For a linear time series model, this is equivalent to a $(1-B)$ factor in the AR specification. The Augmented Dickey Fuller Test will look for evidence of a unit root. We use the test to verify the DAX Opening prices are nonstationary, and the returns for the DAX stock index are stationary. 
+The time series graphs for DAX Opening prices look nonstationary through visual inspection, and the returns for DAX by day look stationary. We obtain empirical data to show whether the data is stationary or not through the Augmented Dickey Fuller Test. A time series model has a unit root if its first difference is stationary. For a linear time series model, this is equivalent to a $(1-B)$ factor in the AR polynomial $\phi(B)$. The Augmented Dickey Fuller Test will look for evidence of a unit root. We use the test to verify the DAX Opening prices are nonstationary, and the returns for the DAX stock index are stationary. 
+
+$$
+\begin{aligned}
+H_0 &: \text{The data are nonstationary} \\
+H_A &: \text{The data are stationary}
+\end{aligned}
+$$
 
 ```{python}
 #| echo: false
@@ -306,7 +311,7 @@ summary_table
 
 ```
 
-Therefore, the DAX Opens has a p value of 0.603955, so, we fail to reject the null, and it is non stationary. On the other hand, the DAX Return has a p value of 0 after running the test. We reject the null and there is evidence to show that the data is stationary. 
+Therefore, the DAX Opens has a p value of 0.603955, so, we fail to reject the null, so we may assume it is stationary. On the other hand, the DAX Return has a p value of 0 after running the test. We reject the null and there is evidence to show that the data is stationary. 
 
 ###  Spectral Density Function 
 
@@ -500,7 +505,7 @@ AR Order & 0 & 1 & 2 & 3 & 4 \\
 \bottomrule
 \end{tabular}
 }
-\caption{AIC for $I = 0$}
+\caption{AIC for $d = 0$}
 \end{subtable}
 \hfill
 \begin{subtable}{0.32\textwidth}
@@ -521,7 +526,7 @@ AR Order & 0 & 1 & 2 & 3 & 4 \\
 \bottomrule
 \end{tabular}
 }
-\caption{AIC for $I = 1$}
+\caption{AIC for $d = 1$}
 \end{subtable}
 \hfill
 \begin{subtable}{0.32\textwidth}
@@ -542,7 +547,7 @@ AR Order & 0 & 1 & 2 & 3 & 4 \\
 \bottomrule
 \end{tabular}
 }
-\caption{AIC for $I = 2$}
+\caption{AIC for $d = 2$}
 \end{subtable}
 \hfill
 \end{table}
@@ -755,7 +760,7 @@ AR Order & 0 & 1 & 2 & 3 & 4 \\
 \bottomrule
 \end{tabular}
 }
-\caption{AIC for $I = 0$}
+\caption{AIC for $d = 0$}
 \end{subtable}
 \hfill
 \begin{subtable}{0.32\textwidth}
@@ -776,7 +781,7 @@ AR Order & 0 & 1 & 2 & 3 & 4 \\
 \bottomrule
 \end{tabular}
 }
-\caption{AIC for $I = 1$}
+\caption{AIC for $d = 1$}
 \end{subtable}
 \hfill
 \begin{subtable}{0.32\textwidth}
@@ -797,7 +802,7 @@ AR Order & 0 & 1 & 2 & 3 & 4 \\
 \bottomrule
 \end{tabular}
 }
-\caption{AIC for $I = 2$}
+\caption{AIC for $d = 2$}
 \end{subtable}
 \hfill
 \end{table}
