@@ -419,6 +419,8 @@ Let's train models on time series data to accurately reflect our observations on
 ### ARMA and ARIMA
 To capture autoregressive and moving average components, we use an autoregressive moving average model (ARMA) and autoregressive integrated moving average model (ARIMA). The main difference is that the ARIMA model differences through its integrated component, which allows it to handle non stationary data; ARMA generally assumes stationary data.
 
+#### DAX Open Prices
+
 
 Let's analyze the results of an ARIMA model on the DAX Open Prices; our visual analysis and ADF test revealed that the DAX Open Prices as a time series are nonstationary. Because of the COVID wave in 2020, for purposes of fitting a model, we use all results from Januray 1, 2010 to December 31, 2018. The best ARIMA model for DAX Open Prices is an ARIMA(3,1,2). The shape matches, and has a relatively low AIC of -3916.7  - it is trained and graphed on top of raw data below, overlapping almost perfectly.
 
@@ -541,7 +543,7 @@ AR Order & 0 & 1 & 2 & 3 & 4 \\
 \end{table}
 
 
-####  Model Diagnosis
+#####  Model Diagnosis
 We check causality and invertibility in this section. Causality is when the AR process has all roots that lie outside the unit circle. Invertability is when the MA process has all roots that lie outside the unit circle. We diagnose our best solution, ARIMA (3,1,2) below.
 
 ```{python}
@@ -604,7 +606,7 @@ def plot_roots_ax(ax, roots, title):
     ax.legend()
 
 # Create side-by-side plots
-fig, axs = plt.subplots(1, 2, figsize=(8,4))
+fig, axs = plt.subplots(1, 2, figsize=(10,5))
 
 plot_roots_ax(axs[0], ar_roots_plot, 'AR Roots (Zoomed)')
 plot_roots_ax(axs[1], ma_roots, 'MA Roots')
@@ -613,12 +615,121 @@ plt.tight_layout()
 plt.show()
 
 ```
+We therefore see that all roots lie outside the unit circle. Therefore, our solution is both causal and invertible. 
 
 
-#### Residual Analysis
-TODO ...
+##### Residual Analysis
+Now we look at the residuals. 
+
+```{python}
+#| echo: false
+import pandas as pd
+import numpy as np
+import matplotlib.pyplot as plt
+import statsmodels.api as sm
+
+data = pd.read_csv("data/DAX_2010-2020.csv")
+
+# Clean column names
+data.columns = data.columns.str.strip()
+
+data['Date'] = pd.to_datetime(data['Date'], format='%m/%d/%Y')
+data = data.sort_values('Date')
+
+data['Open'] = (
+    data['Open']
+    .str.replace('.', '', regex=False)
+    .str.replace(',', '.', regex=False)
+    .astype(float)
+)
+
+data.set_index('Date', inplace=True)
+data = data.loc[:'2018-12-31']
+
+# Deal with Warnings
+data = data.asfreq('B')
+data['Open'] = data['Open'].ffill()
+
+model = ARIMA(data['Open'], order=(3,1,2))
+result = model.fit()
+
+# Get residuals
+residuals = result.resid
+
+fig, axs = plt.subplots(1, 2, figsize=(12,5))
+
+# Histogram
+axs[0].hist(residuals, bins=30, edgecolor='k')
+axs[0].set_title('Histogram of Residuals')
+axs[0].set_xlabel('Residual')
+axs[0].set_ylabel('Frequency')
+
+# QQ plot
+sm.qqplot(residuals, line='45', ax=axs[1])
+axs[1].set_title('QQ Plot of Residuals')
+
+plt.tight_layout()
+plt.show()
+
+```
+
+#### DAX Returns
+Let's run the same procedure for the returns. The best model is ARIMA(3, 0, 4)
 
 
+```{python}
+#| echo: false
+import pandas as pd
+import numpy as np
+import matplotlib.pyplot as plt
+
+data = pd.read_csv("data/DAX_2010-2020.csv")
+
+# Clean column names
+data.columns = data.columns.str.strip()
+
+data['Date'] = pd.to_datetime(data['Date'], format='%m/%d/%Y')
+data = data.sort_values('Date')
+
+data['Open'] = (
+    data['Open']
+    .str.replace('.', '', regex=False)
+    .str.replace(',', '.', regex=False)
+    .astype(float)
+)
+
+data.set_index('Date', inplace=True)
+data = data.loc[:'2018-12-31']
+
+# Deal with Warnings
+data = data.asfreq('B')
+data['Open'] = data['Open'].ffill()
+data['returns'] = np.log(data['Open']) - np.log(data['Open'].shift(1))
+
+returns = data['returns'].dropna()
+
+model = ARIMA(returns, order=(3,0,4))
+result = model.fit()
+
+# In-sample prediction
+pred = result.predict(start=0, end=len(returns)-1, typ='levels')
+
+plt.figure(figsize=(12,5))
+plt.plot(returns.index, returns, label='Returns', color='yellow')
+plt.plot(returns.index, pred, label='ARIMA Predicted', color='blue')
+plt.title("DAX Open vs ARIMA(3,0,4) Prediction")
+plt.xlabel("Date")
+plt.ylabel("Returns")
+plt.legend()
+plt.show()
+
+```
+
+##### Model Diagnosis
+Now we assess causality and invertability.
+
+##### Residuals
+Now we look at the residuals
 
 
 ### SARMA and SARIMA
