@@ -311,7 +311,7 @@ summary_table
 
 ```
 
-Therefore, the DAX Opens has a p value of 0.603955, so, we fail to reject the null, so we may assume it is stationary. On the other hand, the DAX Return has a p value of 0 after running the test. We reject the null and there is evidence to show that the data is stationary. 
+Therefore, the DAX Opens has a p value of 0.603955, so, we fail to reject the null, so we may assume it is nonstationary. On the other hand, the DAX Return has a p value of 0 after running the test. We reject the null and there is evidence to show that the data is stationary. 
 
 ###  Spectral Density Function 
 
