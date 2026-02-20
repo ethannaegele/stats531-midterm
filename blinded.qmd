@@ -317,10 +317,7 @@ Therefore, the DAX Opens has a p value of 0.603955, so, we fail to reject the nu
 
 An estimator of the spectral density function determine a signal’s frequency context content from
 a time series sample. In this section, we look at the frequencies for the DAX Stock Prices and Returns. It splits data into overlapping segments, computes modified periodograms, and averages them to
-reduce the variance. Advantages of Welch’s method are that it provides a smooth and reliable
-estimate compared to alternatives.
-
-From the graphs, we may visually inspect the point at which the spectral density is the highest. This will be the dominant frequency. Thus, in the context of the DAX stock, the frequency at which we have our peak spectral density is the dominant rate at which an oscillation in the stock index happens.
+reduce the variance. From the graphs, we may visually inspect the point at which the spectral density is the highest. This will be the dominant frequency, the most common rate at which an oscillation in the stock index happens.
 
 Below, we show frequency vs spectral density function of the DAX Open and Return values.
 
@@ -427,7 +424,13 @@ The highest spectral densities in our graphs above are at frequencies of 0.00036
 Let's train models on time series data to accurately reflect our observations on the DAX Stock Index from the exploratory data analysis. The DAX Open Prices are nonstationary, while the returns are stationary. 
 
 ### ARMA and ARIMA
-To capture autoregressive and moving average components, we use an autoregressive moving average model (ARMA) and autoregressive integrated moving average model (ARIMA). The main difference is that the ARIMA model differences through its integrated component, which allows it to handle non stationary data; ARMA generally assumes stationary data.
+How do we forecast DAX Stock Prices and Returns? The exploratory data analysis reveals that we can depend on lags and differencing. This information is captured in an ARMA model.
+
+$$ y_n = \phi_1 y_{n-1} + \phi_2 y_{n-2} + \phi_3 y_{n-3} + \theta_1 \epsilon_n + \theta_2 \epsilon_{n-1} $$
+$$ y_n = \phi_1 B y_n + \phi_2 B^2 y_n + \phi_3 B^3 y_n + \theta_1 \epsilon_n + \theta_2 B \epsilon_n $$
+$$ y_n \phi(B) = \theta(B) \epsilon_n $$
+
+
 
 #### DAX Open Prices
 
