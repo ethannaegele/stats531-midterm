@@ -284,10 +284,8 @@ def adf_summary(series, name):
         "p-value": result[1],
         "Lags Used": result[2],
         "Observations": result[3],
-        "Critical Value (1%)": result[4]['1%'],
         "Critical Value (5%)": result[4]['5%'],
-        "Critical Value (10%)": result[4]['10%'],
-        "Stationary": "Yes" if result[1] <= 0.05 else "No"
+        "Reject the H0?": "Yes" if result[1] <= 0.05 else "No"
     }
     
     return pd.Series(output)
@@ -714,7 +712,7 @@ result = model.fit()
 # In-sample prediction
 pred = result.predict(start=0, end=len(returns)-1, typ='levels')
 
-plt.figure(figsize=(10,3))
+plt.figure(figsize=(10,2))
 plt.plot(returns.index, returns, label='Returns', color='yellow')
 plt.plot(returns.index, pred, label='ARIMA Predicted', color='blue')
 plt.title("DAX Open vs ARIMA(3,0,4) Prediction")
