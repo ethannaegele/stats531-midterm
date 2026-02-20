@@ -27,11 +27,10 @@ jupyter: python3
 ---
 
 
-We look into the DAX Stock Index in Germany, and investigate how we can model the stock's opening prices, volatility, and other features. The DAX index tracks the performance of the 40 largest companies listed on the Regulated Market of the Frankfurt Stock Exchange [@stoxx_dax_index]. They represent the diversified economy of Germany. The DAX is generally known as the German equity benchmark, surviving for over 30 years. We aim to model increases and decreases in the stock's open price and, as often seen in stock analysis, volatility.
+We look into the DAX Stock Index in Germany, and investigate how we can model the stock's opening prices, volatility, and other features. The DAX index tracks the performance of the 40 largest companies listed on the Regulated Market of the Frankfurt Stock Exchange [@stoxx_dax_index]. They represent the diversified economy of Germany. The DAX is generally known as the German equity benchmark, surviving for over 30 years. What are the best ways to model changes in the stock's price and its returns? How do we model its volatility, and how accurate are our models? 
 
 # Exploratory Data Analysis
 ### Introduction 
-
 
 We look at the daily stock price open for the DAX index for every day from 2010 to 2020 through a time series graph. The data above for stock open shows a roughly nonstationary data. The mean is not constant, and we have a large dip in 2020, likely associated with covid. 
 
@@ -57,7 +56,6 @@ data['Open'] = (
 )
 
 data.set_index('Date', inplace=True)
-
 
 flag_height = 0.1
 flag_width = 0.2
@@ -277,8 +275,16 @@ The time series graphs for DAX Opening prices look nonstationary through visual 
 
 $$
 \begin{aligned}
-H_0 &: \text{The data are nonstationary} \\
-H_A &: \text{The data are stationary}
+H_0 &: \text{The process } \{x_t\} \text{ is nonstationary} \\
+&\exists\, t, h, k \text{ such that } 
+(x_t, x_{t+1}, \dots, x_{t+k}) 
+\overset{d}{\neq} 
+(x_{t+h}, x_{t+1+h}, \dots, x_{t+k+h}) \\[6pt]
+H_A &: \text{The process } \{x_t\} \text{ is stationary} \\
+&\forall\, t, h, k,\;
+(x_t, x_{t+1}, \dots, x_{t+k})
+\overset{d}{=}
+(x_{t+h}, x_{t+1+h}, \dots, x_{t+k+h})
 \end{aligned}
 $$
 
@@ -286,6 +292,7 @@ $$
 #| echo: false
 import pandas as pd
 from statsmodels.tsa.stattools import adfuller
+from scipy.stats import norm
 
 def adf_summary(series, name):
     result = adfuller(series.dropna())
@@ -308,7 +315,6 @@ summary_table = pd.concat([
 ], axis=1)
 
 summary_table
-
 ```
 
 Therefore, the DAX Opens has a p value of 0.603955, so, we fail to reject the null, so we may assume it is nonstationary. On the other hand, the DAX Return has a p value of 0 after running the test. We reject the null and there is evidence to show that the data is stationary. 
@@ -316,8 +322,7 @@ Therefore, the DAX Opens has a p value of 0.603955, so, we fail to reject the nu
 ###  Spectral Density Function 
 
 An estimator of the spectral density function determine a signal’s frequency context content from
-a time series sample. In this section, we look at the frequencies for the DAX Stock Prices and Returns. It splits data into overlapping segments, computes modified periodograms, and averages them to
-reduce the variance. From the graphs, we may visually inspect the point at which the spectral density is the highest. This will be the dominant frequency, the most common rate at which an oscillation in the stock index happens.
+a time series sample. It is measured as $\lambda(\omega) = \int_{\infty}^{-\infty} \gamma(x) e^{-2\pi i \omega x}$ [@ionides2026_time_series_intro]. In this section, we look at the frequencies for the DAX Stock Prices and Returns. It splits data into overlapping segments, computes modified periodograms, and averages them to reduce the variance. From the graphs, we may visually inspect the point at which the spectral density is the highest. This will be the dominant frequency, the most common rate at which an oscillation in the stock index happens.
 
 Below, we show frequency vs spectral density function of the DAX Open and Return values.
 
@@ -884,7 +889,7 @@ def plot_roots_ax(ax, roots, title):
     ax.legend()
 
 # Create side-by-side plots
-fig, axs = plt.subplots(1, 2, figsize=(10,3))
+fig, axs = plt.subplots(1, 2, figsize=(10,2))
 
 plot_roots_ax(axs[0], ar_roots_plot, 'AR Roots (Zoomed)')
 plot_roots_ax(axs[1], ma_roots, 'MA Roots')
@@ -938,7 +943,7 @@ result = model.fit()
 # Get residuals
 residuals = result.resid
 
-fig, axs = plt.subplots(1, 2, figsize=(10,3))
+fig, axs = plt.subplots(1, 2, figsize=(10,2))
 
 # Histogram
 axs[0].hist(residuals, bins=30, edgecolor='k')
