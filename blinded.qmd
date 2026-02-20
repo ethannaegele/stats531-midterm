@@ -9,15 +9,25 @@ format:
   pdf:
     include-in-header:
       text: |
+        \RedeclareSectionCommand[
+          beforeskip=0.5em,
+          runin=false,
+          afterskip=0em
+        ]{section}
+        \RedeclareSectionCommand[
+          beforeskip=0em,
+          runin=false,
+          afterskip=0em
+        ]{subsection}
+        \RedeclareSectionCommand[
+          beforeskip=0em,
+          runin=false,
+          afterskip=0em
+        ]{subsubsection}
         \usepackage{fullpage}
-    header-includes:
-        - \usepackage{float}
-execute:
-  python: true
+number-sections: true
+jupyter: python3
 ---
-
-
------------
 
 
 We look into the DAX Stock Index in Germany, and investigate how we can model the stock's opening prices, volatility, and other features. The DAX index tracks the performance of the 40 largest companies listed on the Regulated Market of the Frankfurt Stock Exchange [@stoxx_dax_index]. They represent the diversified economy of Germany. It is generally known as the German equity benchmark, and has been around for over 30 years. We aim to model increases and decreases in the stock's open price and, as often seen in stock analysis, volatility.
