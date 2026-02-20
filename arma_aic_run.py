@@ -31,7 +31,7 @@ result = model.fit()
 
 # ARMA(4,0,i) model training
 for i in range(0, 5):
-    model = ARIMA(data['Open'], order=(4, 2, i))
+    model = ARIMA(returns, order=(4, 2, i))
     model_fit = model.fit()
     print("AIC:", model_fit.aic)
 
