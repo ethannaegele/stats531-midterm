@@ -927,6 +927,126 @@ plt.legend()
 
 ### GARCH
 
+```{python}
+#| echo: false
+import pandas as pd
+import matplotlib.pyplot as plt
+from statsmodels.tsa.statespace.sarimax import SARIMAX
+import numpy as np
+from statsmodels.graphics.tsaplots import plot_acf
+from statsmodels.tsa.stattools import acf
+from statsmodels.stats.diagnostic import acorr_ljungbox
+from sklearn.metrics import mean_absolute_error, mean_absolute_percentage_error, mean_squared_error
+from arch import arch_model
+
+def aic_table(data, P, Q, d=0, model_type='sarimax', dist='normal'):
+    table = np.zeros((P+1, Q+1))
+    model_type = model_type.strip().lower()
+    for p in range(P+1):
+        for q in range(Q+1):
+            try:
+                if model_type == 'sarimax':
+                    model = SARIMAX(data,
+                                    trend = 'c',
+                                    order=(p, d, q))
+                elif model_type == 'garch':
+                    # if p == 0:
+                    #     continue # NaNs only for ARCH(0)
+                    model = arch_model(data,
+                                       vol='GARCH',
+                                       p=p,
+                                       q=q,
+                                       dist=dist)
+                else:
+                    raise ValueError
+                results = model.fit()
+                table[p, q] = results.aic # sarimax, garch have aic attribute
+            except:
+                table[p, q] = np.nan
+    if model_type == 'sarimax':
+        df = pd.DataFrame(table,
+            index=[f'AR{p}' for p in range(P+1)],
+            columns=[f'MA{q}' for q in range(Q+1)])
+    elif model_type == 'garch':
+        df = pd.DataFrame(table,
+            index=[f'ARCH{p}' for p in range(P+1)], # by this, I mean there are is dependence on the p previous epsilon values
+            columns=[f'GARCH{q}' for q in range(Q+1)]) # by this, I mean there are q "GARCH" terms in that there is dependence on the q previous sigma^2 values
+    else:
+        raise ValueError
+    return df
+
+
+
+data = pd.read_csv("data/DAX_2010-2020.csv")
+data['Date'] = pd.to_datetime(data['Date'], format='%m/%d/%Y')
+data = data.sort_values('Date')
+data = data[data['Date'] < '2020-01-01']
+
+
+data.set_index('Date', inplace=True)
+data = data.asfreq('B')  # Business day frequency
+data['Open'] = data['Open'].ffill()
+
+df = data.copy()
+df = df[['Open']]
+df = df[df.index < '2019-01-01']
+df["Open"] = df["Open"].str.replace(",", "", regex=False).astype(float) # remove undesirable comma formatting in the price
+
+df2 = df.copy()
+df2 = np.log(df['Open'])
+df2 = df2.diff().dropna()
+df2 = df2 * 100
+
+
+
+# aic_table(df2, P = 4, Q = 4, model_type='garch')
+
+
+model_g11 = arch_model(df2,
+                        vol='GARCH',
+                        p=1,
+                        q=1).fit()
+print(model_g11.summary())
+
+estimated_vol = model_g11.conditional_volatility
+
+# credit to https://blog.quantinsti.com/garch-gjr-garch-volatility-forecasting-python/ for this suggestion
+realized_vol = df2.rolling(window=5).std()  # 5-day window for smoothing. Includes data from time t
+
+# comparing GARCH conditional volatility estimate to r_t^2 as this seems to be more common in literature?
+# for example, see https://link.springer.com/chapter/10.1007/978-3-030-46347-2_8
+realized_vol_v2 = df2**2
+
+
+plt.clf()
+plt.figure(figsize=(10, 5))
+
+plt.plot(df2.index, realized_vol, label='Realized Volatility (Smoothed Estimate)')
+plt.plot(df2.index, estimated_vol, label='Model Estimated Volatility')
+
+plt.xlabel('Date')
+plt.ylabel('Volatility')
+plt.title('Realized vs Estimated Volatility')
+plt.legend()
+
+plt.show()
+
+
+plt.clf()
+plt.figure(figsize=(10, 5))
+
+plt.plot(df2.index, realized_vol_v2, label='Realized Volatility (Squared log returns)')
+plt.plot(df2.index, estimated_vol**2, label='Model Estimated Volatility')
+
+plt.xlabel('Date')
+plt.ylabel('Volatility')
+plt.title('Realized vs Estimated Volatility')
+plt.legend()
+
+plt.show()
+
+```
+
 # Limitations
 
 # Conclusion 
