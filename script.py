@@ -18,21 +18,46 @@ data['Open'] = (
 )
 
 data.set_index('Date', inplace=True)
+data = data.loc[:'2018-12-31']
 data = data.asfreq('B')  # Business day frequency
 data['Open'] = data['Open'].ffill()
 
-# ARMA(2,0,2) model training
-model = ARIMA(data['Open'], order=(4, 0, 4))
-model_fit = model.fit()
+data['returns'] = np.log(data['Open']) - np.log(data['Open'].shift(1))
+
+returns = data['returns'].dropna()
+
+model = ARIMA(returns, order=(0, 0, 0))
+result = model.fit()
+
+# ARMA(4,0,i) model training
+for i in range(0, 5):
+    model = ARIMA(data['Open'], order=(4, 2, i))
+    model_fit = model.fit()
+    print("AIC:", model_fit.aic)
 
 
-print("AIC:", model_fit.aic)
+# import itertools
+# import warnings
+# warnings.filterwarnings("ignore")
 
+# p = range(0, 5)
+# d = range(0, 3)
+# q = range(0, 5)
 
+# best_aic = float("inf")
+# best_order = None
 
-#           MA(1)       MA(2)       MA(3)       MA(4)
-# AR (1)    -3965.5     -3965.7     -3972.9     -3973.5
-# AR (2)    -3962       -3966.6     -3972.8     -3971.7
-# AR (3)    -3961.6     -3970.7     -3974.7     -3972.2
-# AR (4)    -3972.8     -3974.8     -3972.4     -3968
+# for order in itertools.product(p, d, q):
+#     try:
+#         model = ARIMA(returns, order=order)
+#         model_fit = model.fit()
+        
+#         if model_fit.aic < best_aic:
+#             best_aic = model_fit.aic
+#             best_order = order
+            
+#     except:
+#         continue
 
+# print("Best ARIMA order:", best_order)
+# print("Best AIC:", best_aic)
