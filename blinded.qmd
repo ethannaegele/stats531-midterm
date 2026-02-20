@@ -177,7 +177,7 @@ data['Open'] = (
 )
 data.set_index('Date', inplace=True)
 
-fig, ax = plt.subplots(figsize=(10, 3))
+fig, ax = plt.subplots(figsize=(8, 2))
 plot_acf(data['Open'], ax=ax)
 plt.xlabel('Lag t')
 plt.ylabel('Autocorrelation $\gamma_{x}(0,t)$')
@@ -210,7 +210,7 @@ data.set_index('Date', inplace=True)
 
 data['returns'] = np.log(data['Open']) - np.log(data['Open'].shift(1))
 
-fig, ax = plt.subplots(figsize=(10, 3))
+fig, ax = plt.subplots(figsize=(8, 2))
 plot_acf(data['returns'].dropna(), ax=ax)
 plt.xlabel('Lag t')
 plt.ylabel('Autocorrelation $\gamma_{x}(0,t)$')
@@ -619,7 +619,7 @@ def plot_roots_ax(ax, roots, title):
     ax.legend()
 
 # Create side-by-side plots
-fig, axs = plt.subplots(1, 2, figsize=(10,3))
+fig, axs = plt.subplots(1, 2, figsize=(10,2))
 
 plot_roots_ax(axs[0], ar_roots_plot, 'AR Roots (Zoomed)')
 plot_roots_ax(axs[1], ma_roots, 'MA Roots')
@@ -957,8 +957,12 @@ plt.show()
 
 
 ### SARMA and SARIMA
-We try adding a seasonal component to assess its benefits. It fits well, comparable to ARMA. 
+The Seasonal Autoregressive Moving Average Model (SARMA) adds a seasonal component to the ARMA and ARIMA Models. Instead of considering every lag from 1 to 35, for example, we can take lags 1, 12, and 13, repeatedly. This allows for monthly and yearly coefficients in our model, as one would expect with stock. We show a representation of SARIMAX(2,0,2)(1,0,0,12), and how well it performs below.
 
+$$ By_n = y_{n-1}; B^2 y_n = y_{n-2}; B^{12} y_n = y_{n-12}  $$
+$$ y_t - \phi_1 y_{t-1} - \phi_2 y_{t-2} - \Phi_1 y_{t-12} + \Phi_1 \phi_1 y_{t-13} + \Phi_1 \phi_2 y_{t-14} = \epsilon_t + \theta_1 \epsilon_{t-1} + \theta_2 \epsilon_{t-2} $$
+$$ (1 - \Phi_1 B^{12}) (1 - \phi_1 B - \phi_2 B^2) \, y_t = (1 + \theta_1 B + \theta_2 B^2) \, \epsilon_t $$
+$$ \Phi(B^{12}) \, \phi(B) \, y_t = \theta(B) \, \Theta(B^{12}) \, \epsilon_t$$
 
 
 ```{python}
@@ -980,9 +984,6 @@ warnings.filterwarnings("ignore")
 # Or suppress just SARIMAX starting parameter warnings
 warnings.filterwarnings("ignore", message="Non-stationary starting seasonal autoregressive")
 
-
-
-
 data = pd.read_csv("data/DAX_2010-2020.csv")
 
 data['Date'] = pd.to_datetime(data['Date'], format='%m/%d/%Y')
@@ -995,24 +996,47 @@ data['Open'] = (
     .astype(float)
 )
 
-
 data.set_index('Date', inplace=True)
+data = data.loc[:'2018-12-31']
 data = data.asfreq('B')  # Business day frequency
 data['Open'] = data['Open'].ffill()
 
-returns = np.log(data['Open']).diff().dropna()
 
-model = SARIMAX(data['Open'],order=(2, 0, 2), trend='c', seasonal_order=(1, 0, 0, 12), enforce_stationarity=True)
-results = model.fit()
+# Returns Model
+data['returns'] = np.log(data['Open']) - np.log(data['Open'].shift(1))
+returns = data['returns'].dropna()
+model_returns = SARIMAX(data['Open'],order=(2, 0, 2), trend='c', seasonal_order=(1, 0, 0, 12), enforce_stationarity=True)
+results_returns = model.fit()
+sim_returns = result.simulate(nsimulations=len(returns))
 
+# Open Model
+model_open = SARIMAX(data['Open'],
+                     order=(2, 0, 2),
+                     seasonal_order=(1, 0, 0, 12),
+                     trend='c',
+                     enforce_stationarity=True)
+results_open = model_open.fit()
+sim_open = results_open.simulate(nsimulations=len(data))
 
-sim = result.simulate(nsimulations=len(returns))
+fig, axs = plt.subplots(1, 2, figsize=(10, 2))
 
-plt.figure(figsize=(10,2))
-plt.plot(returns.index, sim, label="SARMA", color='green')
-plt.plot(returns.index, returns, label="Returns", color='yellow')
-plt.legend()
+# Open prices vs SARIMA
+axs[0].plot(data.index, data['Open'], label='Open', color='blue')
+axs[0].plot(data.index, sim_open, label='SARIMA Open', color='red')
+axs[0].set_title('Open Prices vs SARIMA Simulation')
+axs[0].legend()
+
+# Returns vs SARIMA
+axs[1].plot(returns.index, returns, label='Returns', color='yellow')
+axs[1].plot(returns.index, sim_returns, label='SARIMA Returns', color='green')
+axs[1].set_title('Log Returns vs SARIMA Simulation')
+axs[1].legend()
+
+plt.tight_layout()
+plt.show()
 ```
+
+The SARIMA models for DAX Open prices and returns have AIC values of -3897.623886161021 and -14029.486910232028.
 
 
 
@@ -1110,7 +1134,7 @@ realized_vol = df2.rolling(window=5).std()  # 5-day window for smoothing. Includ
 realized_vol_v2 = df2**2
 
 
-plt.figure(figsize=(10, 3))
+plt.figure(figsize=(10, 2))
 
 plt.plot(df2.index, realized_vol, label='Realized Volatility (Smoothed Estimate)')
 plt.plot(df2.index, estimated_vol, label='Model Estimated Volatility')
@@ -1122,7 +1146,7 @@ plt.legend()
 
 plt.show()
 
-plt.figure(figsize=(10, 3))
+plt.figure(figsize=(10, 2))
 
 plt.plot(df2.index, realized_vol_v2, label='Realized Volatility (Squared log returns)')
 plt.plot(df2.index, estimated_vol**2, label='Model Estimated Volatility')
