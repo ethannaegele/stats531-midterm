@@ -72,7 +72,7 @@ class HandlerFlag(HandlerPatch):
         return [p1, p2, p3]
 flag_proxy = mpatches.Patch(color='none', label='DAX Open Prices')
 
-plt.figure(figsize=(10, 4))
+plt.figure(figsize=(10, 2))
 plt.plot(data['Open'], label = "DAX Open", color='#006400')
 plt.legend(
     handles=[flag_proxy],
@@ -132,7 +132,7 @@ class HandlerFlag(HandlerPatch):
         return [p1, p2, p3]
 flag_proxy = mpatches.Patch(color='none', label='DAX Return')
 
-plt.figure(figsize=(10, 4))
+plt.figure(figsize=(10, 2))
 plt.plot(data['returns'], label = "DAX Returns", color='#006400')
 plt.legend(
     handles=[flag_proxy],
@@ -170,7 +170,7 @@ data['Open'] = (
 )
 data.set_index('Date', inplace=True)
 
-fig, ax = plt.subplots(figsize=(10, 4))
+fig, ax = plt.subplots(figsize=(10, 3))
 plot_acf(data['Open'], ax=ax)
 plt.xlabel('Lag t')
 plt.ylabel('Autocorrelation $\gamma_{x}(0,t)$')
@@ -203,7 +203,7 @@ data.set_index('Date', inplace=True)
 
 data['returns'] = np.log(data['Open']) - np.log(data['Open'].shift(1))
 
-fig, ax = plt.subplots(figsize=(10, 4))
+fig, ax = plt.subplots(figsize=(10, 3))
 plot_acf(data['returns'].dropna(), ax=ax)
 plt.xlabel('Lag t')
 plt.ylabel('Autocorrelation $\gamma_{x}(0,t)$')
@@ -350,7 +350,7 @@ dom_psd = psd[idx_max]
 
 
 
-plt.figure(figsize=(10, 4))
+plt.figure(figsize=(10, 2))
 plt.semilogy(frequencies, psd)
 plt.axvline(dom_freq, color='red', linestyle='--', 
             label=f'Dominant freq = {dom_freq:.3f}')
@@ -399,7 +399,7 @@ idx_max = np.argmax(psd)
 dom_freq = frequencies[idx_max]
 dom_psd = psd[idx_max]
 
-plt.figure(figsize=(10, 4))
+plt.figure(figsize=(10, 2))
 plt.semilogy(frequencies, psd)
 plt.axvline(dom_freq, color='red', linestyle='--', 
             label=f'Dominant freq = {dom_freq:.3f}')
@@ -459,7 +459,7 @@ result = model.fit()
 # In-sample prediction (in original scale)
 pred = result.predict(start=data.index[0], end=data.index[-1], typ='levels')
 
-plt.figure(figsize=(12,5))
+plt.figure(figsize=(10,2))
 plt.plot(data.index, data['Open'], label='Actual Open', color='yellow')
 plt.plot(data.index, pred, label='ARIMA Predicted', color='blue')
 plt.title("DAX Open vs ARIMA(3,1,2) Prediction")
@@ -606,7 +606,7 @@ def plot_roots_ax(ax, roots, title):
     ax.legend()
 
 # Create side-by-side plots
-fig, axs = plt.subplots(1, 2, figsize=(10,5))
+fig, axs = plt.subplots(1, 2, figsize=(10,3))
 
 plot_roots_ax(axs[0], ar_roots_plot, 'AR Roots (Zoomed)')
 plot_roots_ax(axs[1], ma_roots, 'MA Roots')
@@ -656,7 +656,7 @@ result = model.fit()
 # Get residuals
 residuals = result.resid
 
-fig, axs = plt.subplots(1, 2, figsize=(12,5))
+fig, axs = plt.subplots(1, 2, figsize=(10,3))
 
 # Histogram
 axs[0].hist(residuals, bins=30, edgecolor='k')
@@ -714,7 +714,7 @@ result = model.fit()
 # In-sample prediction
 pred = result.predict(start=0, end=len(returns)-1, typ='levels')
 
-plt.figure(figsize=(12,5))
+plt.figure(figsize=(10,3))
 plt.plot(returns.index, returns, label='Returns', color='yellow')
 plt.plot(returns.index, pred, label='ARIMA Predicted', color='blue')
 plt.title("DAX Open vs ARIMA(3,0,4) Prediction")
@@ -871,7 +871,7 @@ def plot_roots_ax(ax, roots, title):
     ax.legend()
 
 # Create side-by-side plots
-fig, axs = plt.subplots(1, 2, figsize=(10,5))
+fig, axs = plt.subplots(1, 2, figsize=(10,3))
 
 plot_roots_ax(axs[0], ar_roots_plot, 'AR Roots (Zoomed)')
 plot_roots_ax(axs[1], ma_roots, 'MA Roots')
@@ -925,7 +925,7 @@ result = model.fit()
 # Get residuals
 residuals = result.resid
 
-fig, axs = plt.subplots(1, 2, figsize=(12,5))
+fig, axs = plt.subplots(1, 2, figsize=(10,3))
 
 # Histogram
 axs[0].hist(residuals, bins=30, edgecolor='k')
@@ -995,7 +995,7 @@ results = model.fit()
 
 sim = result.simulate(nsimulations=len(returns))
 
-plt.figure(figsize=(10,4))
+plt.figure(figsize=(10,2))
 plt.plot(returns.index, sim, label="SARMA", color='green')
 plt.plot(returns.index, returns, label="Returns", color='yellow')
 plt.legend()
@@ -1096,7 +1096,7 @@ realized_vol = df2.rolling(window=5).std()  # 5-day window for smoothing. Includ
 realized_vol_v2 = df2**2
 
 
-plt.figure(figsize=(10, 5))
+plt.figure(figsize=(10, 3))
 
 plt.plot(df2.index, realized_vol, label='Realized Volatility (Smoothed Estimate)')
 plt.plot(df2.index, estimated_vol, label='Model Estimated Volatility')
@@ -1108,7 +1108,7 @@ plt.legend()
 
 plt.show()
 
-plt.figure(figsize=(10, 5))
+plt.figure(figsize=(10, 3))
 
 plt.plot(df2.index, realized_vol_v2, label='Realized Volatility (Squared log returns)')
 plt.plot(df2.index, estimated_vol**2, label='Model Estimated Volatility')
