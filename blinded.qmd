@@ -728,8 +728,141 @@ plt.show()
 ##### Model Diagnosis
 Now we assess causality and invertability.
 
+```{python}
+#| echo: false
+import pandas as pd
+import numpy as np
+import matplotlib.pyplot as plt
+
+data = pd.read_csv("data/DAX_2010-2020.csv")
+
+# Clean column names
+data.columns = data.columns.str.strip()
+
+data['Date'] = pd.to_datetime(data['Date'], format='%m/%d/%Y')
+data = data.sort_values('Date')
+
+data['Open'] = (
+    data['Open']
+    .str.replace('.', '', regex=False)
+    .str.replace(',', '.', regex=False)
+    .astype(float)
+)
+
+data.set_index('Date', inplace=True)
+data = data.loc[:'2018-12-31']
+
+# Deal with Warnings
+data = data.asfreq('B')
+data['Open'] = data['Open'].ffill()
+
+data['returns'] = np.log(data['Open']) - np.log(data['Open'].shift(1))
+
+returns = data['returns'].dropna()
+
+
+model = ARIMA(returns, order=(3,0,4))
+result = model.fit()
+
+ar_roots = result.arroots
+# print("AR roots:", ar_roots)
+
+# MA roots
+ma_roots = result.maroots
+# print("MA roots:", ma_roots)
+
+# We remove outliers in the AR solutions so that our visualization does not suffer.
+ar_roots_plot = ar_roots[np.abs(ar_roots) < 10]
+
+def plot_roots_ax(ax, roots, title):
+    theta = np.linspace(0, 2*np.pi, 100)
+    x = np.cos(theta)
+    y = np.sin(theta)
+    
+    ax.plot(x, y, 'k--', label='Unit Circle')  # unit circle
+    ax.scatter(roots.real, roots.imag, color='red', s=100, label='Roots')
+    ax.axhline(0, color='grey', lw=1)
+    ax.axvline(0, color='grey', lw=1)
+    ax.set_xlabel('Real')
+    ax.set_ylabel('Imag')
+    ax.set_title(title)
+    ax.grid(True)
+    ax.set_aspect('equal', adjustable='datalim')
+    # ax.set_xlim(-1.5, 1.5)  # zoom to unit circle
+    # ax.set_ylim(-1.5, 1.5)
+    ax.legend()
+
+# Create side-by-side plots
+fig, axs = plt.subplots(1, 2, figsize=(10,5))
+
+plot_roots_ax(axs[0], ar_roots_plot, 'AR Roots (Zoomed)')
+plot_roots_ax(axs[1], ma_roots, 'MA Roots')
+
+plt.tight_layout()
+plt.show()
+
+```
+
+All solutions lie outside the unit circle. Therefore, they are all causal and invertible. 
+
 ##### Residuals
 Now we look at the residuals
+
+```{python}
+#| echo: false
+import pandas as pd
+import numpy as np
+import matplotlib.pyplot as plt
+
+data = pd.read_csv("data/DAX_2010-2020.csv")
+
+# Clean column names
+data.columns = data.columns.str.strip()
+
+data['Date'] = pd.to_datetime(data['Date'], format='%m/%d/%Y')
+data = data.sort_values('Date')
+
+data['Open'] = (
+    data['Open']
+    .str.replace('.', '', regex=False)
+    .str.replace(',', '.', regex=False)
+    .astype(float)
+)
+
+data.set_index('Date', inplace=True)
+data = data.loc[:'2018-12-31']
+
+# Deal with Warnings
+data = data.asfreq('B')
+data['Open'] = data['Open'].ffill()
+
+data['returns'] = np.log(data['Open']) - np.log(data['Open'].shift(1))
+
+returns = data['returns'].dropna()
+
+
+model = ARIMA(returns, order=(3,0,4))
+result = model.fit()
+
+# Get residuals
+residuals = result.resid
+
+fig, axs = plt.subplots(1, 2, figsize=(12,5))
+
+# Histogram
+axs[0].hist(residuals, bins=30, edgecolor='k')
+axs[0].set_title('Histogram of Residuals')
+axs[0].set_xlabel('Residual')
+axs[0].set_ylabel('Frequency')
+
+# QQ plot
+sm.qqplot(residuals, line='45', ax=axs[1])
+axs[1].set_title('QQ Plot of Residuals')
+
+plt.tight_layout()
+plt.show()
+
+```
 
 
 ### SARMA and SARIMA
@@ -788,12 +921,7 @@ plt.figure(figsize=(10,4))
 plt.plot(returns.index, sim, label="SARMA", color='green')
 plt.plot(returns.index, returns, label="Returns", color='yellow')
 plt.legend()
-
-
 ```
-
-#### Residual Analysis
-TODO
 
 
 
