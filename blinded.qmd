@@ -1044,6 +1044,7 @@ The SARIMA models for DAX Open prices and returns have AIC values of -3897.62388
 
 
 ### GARCH
+
 A GARCH model can model volatility of the DAX Stock. The GARCH(1, 1) is shown below.
 $$
 \begin{aligned}
@@ -1066,6 +1067,7 @@ We see that GARCH models essentially fit an ARMA model to $\sigma^2_t$ where the
 
 Now, for simplicity, assume that $\mu_t = 0$ for all $t$. Indeed, for our log returns data, this seems appropriate, given that $ARMA(0, 0)$ was favorable via AIC, there was constant trend visible in the plot, and since $\bar{x} \approx 0.02$ for our data. Then we have $E(r_t^2 \mid \mathcal{F}_{t-1}) = Var(r_t \mid \mathcal{F}_{t-1}) = \sigma_t^2$ and hence $E(r_t^2) = E(E(r_t^2 \mid \mathcal{F}_{t-1})) = E(\sigma_t^2)$.
 Thus, $r_t^2$ is a conditionally unbiased estimator for $\sigma_t^2$ (and the two are equal in marginal expectation). Thus, for simplicity, it is theoretically favorable to use $r_t^2$ as a realized volatility proxy for comparison. The disadvantage is that although it is conditionally unbiased, it is high variance. 
+
 
 ```{python}
 #| echo: false
