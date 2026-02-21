@@ -1062,6 +1062,31 @@ We see that GARCH models essentially fit an ARMA model to $\sigma^2_t$ where the
 
 However, as we cannot observe volatility directly, we need a point of comparison for our GARCH estimate of $\sigma_t^2$. For simplicity, assume that $\mu_t = 0$ for all $t$. Indeed, for our log returns data, this seems appropriate, given that $ARMA(0, 0)$ was favorable via AIC, there was constant trend visible in the plot, and since $\bar{x} \approx 0.02$ for our data. Then, as we show in the Supplementary Material, $r_t^2$ is a conditionally unbiased estimator for $\sigma_t^2$ (and the two are equal in marginal expectation). Thus, in that sense, it is theoretically favorable to use $r_t^2$ as a realized volatility proxy for comparison. The disadvantage is that it has high variance. One can also use "smoothed" proxy for volatility, which is the rolling average standard deviation (or variance) of the returns over some period of time $T$, where in this paper we use $T = 5$. This reduces the variance but increases bias. We mostly stick with $r_t^2$ here, as that seems to be favored in the literature and among practitioners for daily data [springer book citation , quantinsti citation].
 
+#### Model Fitting
+
+We first needed to find an appropriate order for our GARCH model. After performing a grid search, we found GARCH(1, 1) minimized the AIC and proceeded wi
+
+We first needed to find an appropriate error distribution for the $e_t$ term as in our notation above. Financial data can often have heavy tails, and errors here may not necessarily be symmetric. We performed a grid search for four different error distributions (Normal, $t$, Skew-$t$, and Generalized Error Distribution) and found that GARCH(1, 1) minimized the AIC in all four cases. Thus, we narrowed our search to GARCH(1, 1) and compared QQ plots of the standardized residuals obtained from fitting GARCH(1, 1) to log returns from 2010-2018 for each error distribution. We found that the Skew-$t$ distribution had the best QQ plot, shown in @fig-qq-plot-garch, indicating that the error terms $e_t$ most resembled the skew-$t$ distribution for our dataset. @fig-garch-smoothed-training-comparison compares the GARCH estimate of volatility to the smoothed estimate. Thus, we see that the model was generally able to adapt to the volatility, following the highs and lows, though its estimates were a more tamed version of the realized proxy. However, using the unbiased realized volatility in @fig-garch-training-comparison shows how large errors can dominate the dataset and skew model performance. Metrics from in-sample performance the 2010-2018 data are shown below (estimated volatility and proxies are for variance):
+
+| Metric                | Unbiased Proxy | Smoothed Proxy |
+|----------------------|---------------:|---------------:|
+| Mean Absolute Error  | 1.629          | 0.784          |
+| Mean Squared Error   | 12.420         | 2.266          |
+
+: Model error comparison {#tbl-training-errors}
+
+To better assess the performance of this model, we used a rolling window forecast as suggested in [citation1, citation2], in which we used the previous 2000 days to forecast the volatility of the next day, and repeat for each day in 2019. Comparison with the smoothed estimate is shown in @fig-garch-smoothed-forecast-comparison. Our forecast metrics are shown below. 
+
+| Metric                | Unbiased Proxy | Smoothed Proxy |
+|----------------------|---------------:|---------------:|
+| Mean Absolute Error  | 0.874          | 0.432          |
+| Mean Squared Error   | 1.522          | 0.253          |
+
+: Model error comparison {#tbl-forecast-errors}
+
+
+
+
 
 ```{python}
 #| echo: false
@@ -1181,6 +1206,7 @@ plt.show()
 ```
 
 ```{python}
+#| echo: false
 import pandas as pd
 import matplotlib.pyplot as plt
 from statsmodels.tsa.statespace.sarimax import SARIMAX
@@ -1198,6 +1224,7 @@ from arch.univariate.distribution import SkewStudent, StudentsT, Normal, General
 ```
 
 ```{python}
+#| echo: false
 data = pd.read_csv("data/DAX_2010-2020.csv") # replace with path when working locally
 # Clean date
 data['Date'] = pd.to_datetime(data['Date'], format='%m/%d/%Y')
@@ -1236,6 +1263,7 @@ df_full = pd.concat([df2, df_test])
 ```
 
 ```{python}
+#| echo: false
 # this code is adapted from Lecture 5
 def aic_table(data, P, Q, d=0, model_type='sarimax', dist='normal', trend='c', mean = 'zero'):
     table = np.zeros((P+1, Q+1))
@@ -1284,6 +1312,7 @@ def get_metrics(y_true, y_pred):
 
 
 ```{python}
+#| echo: false
 model_g11_skewt = arch_model(df2,
                         vol='GARCH',
                         p=1,
@@ -1295,6 +1324,7 @@ model_g11_skewt = arch_model(df2,
 
 
 ```{python}
+#| echo: false
 rolling_window = 2000
 forecast_horizon = 1
 target_mask = (df_full.index >= "2019-01-01") & (df_full.index <= "2019-12-31")
@@ -1340,13 +1370,16 @@ garch_vol_forecast_2019 = pd.Series(
 
 
 ```{python}
+#| echo: false
+#| label: fig-garch-smoothed-forecast-comparison
+#| fig-cap: "Comparison of Smoothed Volatility to Estimated Volatility"
 realized_vol_2019_smooth = df_test.rolling(window=5).std()
 
 plt.clf()
 plt.figure(figsize=(5, 3))
 
-plt.plot(df_test.index[4:], realized_vol_2019_smooth.iloc[4:], label='Realized Volatility (Smooth Proxy)')
-plt.plot(df_test.index[4:], np.sqrt(garch_vol_forecast_2019).iloc[4:], label='1-Step Forecasted Volatility')
+plt.plot(df_test.index[4:], realized_vol_2019_smooth.iloc[4:]**2, label='Realized Volatility (Smooth Proxy)')
+plt.plot(df_test.index[4:], garch_vol_forecast_2019.iloc[4:], label='1-Step Forecasted Volatility')
 
 plt.xlabel('Date')
 plt.ylabel('Volatility')
@@ -1361,7 +1394,7 @@ plt.show()
 
 # Connection to Previous Projects
 
-As with several other previous STATS 531 projects [example 1, example 2, example 3], we chose to study financial time series data. One of our primary goals, however, was to try and extend the work of [mainexample], which also tried to model volatility in stock returns. However, we tried to overcome some of the limitations in their study by first, not using GARCH to analyze volatility of volatility, as, though that may be statistically interesting, is most likely misspecified by GARCH, as the reviewer pointed out [reviewcitation]. Next, [mainexample] was limited in part by the fact that their QQ residual plots throughout their paper indicated misspecification due to heavy tails. They indicated that they attempted to use $t$-distributed errors but were unable to due to failures in "model explanation and diagnosis". By identifying and implementing an error distribution that fails less drastically at the tails using the skewed $t$ distribution, as shown in the QQ plot for our implementation, we were able to at least partially overcome a key limitation in their analysis. 
+As with several other previous STATS 531 projects [example 1, example 2, example 3], we chose to study financial time series data. One of our primary goals, however, was to try and extend the work of [mainexample], which also tried to model volatility in stock returns. However, we tried to overcome some of the limitations in their study by first, not using GARCH to analyze volatility of volatility, as, though that may be statistically interesting, is most likely misspecified by GARCH, as the reviewer pointed out [reviewcitation]. Next, [mainexample] was limited in part by the fact that their QQ residual plots throughout their paper indicated misspecification due to heavy tails. They indicated that they attempted to use $t$-distributed errors but were unable to due to failures in "model explanation and diagnosis". By identifying and implementing an error distribution that fails less drastically at the tails using the skewed $t$ distribution, as shown in the QQ plot for our implementation @fig-qq-plot-garch, we were able to at least partially overcome a key limitation in their analysis. 
 
 
 
@@ -1398,6 +1431,9 @@ $$
 ## Supplementary GARCH plots
 
 ```{python}
+#| echo: false
+#| label: fig-qq-plot-garch
+#| fig-cap: "QQ Plot of Standardized Residuals"
 z = model_g11_skewt.std_resid
 eta = model_g11_skewt.params["eta"]
 lam = model_g11_skewt.params["lambda"]
@@ -1405,19 +1441,20 @@ lam = model_g11_skewt.params["lambda"]
 dist = SkewStudent()
 
 p = (np.arange(1, len(z) + 1) - 0.5) / len(z)
-print(eta)
-print(lam)
 theoretical = dist.ppf(p, np.array([eta, lam]))
 sample = np.sort(z)
 
 plt.clf()
 plt.scatter(theoretical, sample)
 plt.plot(theoretical, theoretical, "r--")
-plt.title("Q-Q plot vs skew-t")
+plt.title("Q-Q Plot Using Skew-t Distributed Errors")
 plt.show()
 ```
 
 ```{python}
+#| echo: false
+#| label: fig-garch-smoothed-training-comparison
+#| fig-cap: "Comparison of Smoothed Volatility to Estimated Volatility"
 estimated_vol_skewt = model_g11_skewt.conditional_volatility
 # credit to https://blog.quantinsti.com/garch-gjr-garch-volatility-forecasting-python/ for this suggestion
 realized_vol_smooth = df2.rolling(window=5).std()  # 5-day window for smoothing. Includes data from time t
@@ -1426,8 +1463,8 @@ realized_vol_smooth = df2.rolling(window=5).std()  # 5-day window for smoothing.
 plt.clf()
 plt.figure(figsize=(10, 5))
 
-plt.plot(df2.index, realized_vol_smooth, label='Realized Volatility (Smoothed Estimate)')
-plt.plot(df2.index, estimated_vol_skewt, label='Model Estimated Volatility')
+plt.plot(df2.index, realized_vol_smooth**2, label='Realized Volatility (Smoothed Estimate)')
+plt.plot(df2.index, estimated_vol_skewt**2, label='Model Estimated Volatility')
 
 plt.xlabel('Date')
 plt.ylabel('Volatility')
@@ -1439,6 +1476,26 @@ plt.show()
 
 
 
+```{python}
+#| echo: false
+#| label: fig-garch-training-comparison
+#| fig-cap: "Comparison of Realized Volatility to Estimated Volatility"
+
+realized_vol_v2 = df2**2
+
+plt.clf()
+plt.figure(figsize=(10, 5))
+
+plt.plot(df2.index, realized_vol_v2, label='Realized Volatility (Squared Log Return)')
+plt.plot(df2.index, estimated_vol_skewt**2, label='Model Estimated Volatility')
+
+plt.xlabel('Date')
+plt.ylabel('Volatility')
+plt.title('Realized vs Estimated Volatility')
+plt.legend()
+
+plt.show()
+```
 
 
 
