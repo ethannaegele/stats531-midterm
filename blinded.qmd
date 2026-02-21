@@ -27,12 +27,13 @@ jupyter: python3
 ---
 
 
-We look into the DAX Stock Index in Germany, and investigate how we can model the stock's opening prices, volatility, and other features. The DAX index tracks the performance of the 40 largest companies listed on the Regulated Market of the Frankfurt Stock Exchange [@stoxx_dax_index]. They represent the diversified economy of Germany. The DAX is generally known as the German equity benchmark, surviving for over 30 years. What are the best ways to model changes in the stock's price and its returns? How do we model its volatility, and how accurate are our models? 
+We look into the DAX Stock Index in Germany, and investigate how we can model the stock's opening prices, volatility, and other features. The DAX index tracks the performance of the 40 largest companies listed on the Frankfurt Stock Exchange [@stoxx_dax_index]. They represent the diversified economy of Germany. The DAX is generally known as the German equity benchmark, surviving for over 30 years. What are the best ways to model changes in the stock's price and its returns? How do we model its volatility, and how accurately? 
 
 # Exploratory Data Analysis
 ### Introduction 
 
-We look at the daily stock price open for the DAX index for every day from 2010 to 2020 through a time series graph. The data above for stock open shows a roughly nonstationary data. The mean is not constant, and we have a large dip in 2020, likely associated with covid. 
+We look at the daily stock price open for the DAX index for every day from 2010 to 2020 through a time series graph. The data above for stock open shows a roughly nonstationary data. The mean is not constant, and we have a large dip in 2020, associated with covid [@Caporale2022]. Then we analyze volatility for the DAX stock, $y_n = log(z_n) - log(z_{n-1})$ [@ionides2026_time_series_intro].
+
 
 ```{python}
 #| echo: false
@@ -90,7 +91,6 @@ plt.show()
 
 ```
 
-Now analyze volatility for the DAX stock, calculated as $y_n = log(z_n) - log(z_{n-1})$ [@ionides2026_time_series_intro].
 
 ```{python}
 #| echo: false
@@ -137,7 +137,7 @@ class HandlerFlag(HandlerPatch):
         return [p1, p2, p3]
 flag_proxy = mpatches.Patch(color='none', label='DAX Return')
 
-plt.figure(figsize=(10, 2))
+plt.figure(figsize=(10, 1))
 plt.plot(data['returns'], label = "DAX Returns", color='#006400')
 plt.legend(
     handles=[flag_proxy],
@@ -245,7 +245,7 @@ data['returns'] = np.log(data['Open']) - np.log(data['Open'].shift(1))
 log_returns = np.log(data['Open'] / data['Open'].shift(1)).dropna()
 
 
-fig, axes = plt.subplots(1, 3, figsize=(18, 5))  # 1 row, 3 columns
+fig, axes = plt.subplots(1, 3, figsize=(18, 3))  # 1 row, 3 columns
 
 # Histogram 1: Returns
 axes[0].hist(data['returns'], bins=50, edgecolor='black', color = '#006400')
@@ -422,14 +422,14 @@ plt.title("(Welch) Spectral Density of DAX Returns")
 plt.show()
 ```
 
-The highest spectral densities in our graphs above are at frequencies of 0.00036 and 0.3, which indicates that these are the dominant frequencies for DAX open and return values, respectively. 
+The highest spectral densities in our graphs above are at frequencies of 0.00036 and 0.3, which indicates that these are the dominant frequencies for DAX open and return values, respectively. The periods are 2777 and 3.3 for the dominant oscillation. These make sense, as, we have roughly 2777 data, so, there is one unique non stationary pattern for open prices. Returns are stationary, and repeat roughly every 3.3 stock measurements, which is roughly 3.3 days.
 
 # Fitting Time Series Models
 
-Let's train models on time series data to accurately reflect our observations on the DAX Stock Index from the exploratory data analysis. The DAX Open Prices are nonstationary, while the returns are stationary. 
+Let's train models on time series data to accurately reflect our observations on the DAX Stock Index from the exploratory data analysis, respecting stationarity.
 
 ### ARMA and ARIMA
-How do we forecast DAX Stock Prices and Returns? The exploratory data analysis reveals that we can depend on lags and differencing. This information is captured in an ARMA model.
+How do we forecast DAX Stock Prices and Returns? The exploratory data analysis reveals that these values depend on lags and differencing. This information is captured in an ARMA model [@shumway2000].
 
 $$ y_n = \phi_1 y_{n-1} + \phi_2 y_{n-2} + \phi_3 y_{n-3} + \theta_1 \epsilon_n + \theta_2 \epsilon_{n-1} $$
 $$ y_n = \phi_1 B y_n + \phi_2 B^2 y_n + \phi_3 B^3 y_n + \theta_1 \epsilon_n + \theta_2 B \epsilon_n $$
@@ -440,7 +440,7 @@ $$ y_n \phi(B) = \theta(B) \epsilon_n $$
 #### DAX Open Prices
 
 
-Let's analyze the results of an ARIMA model on the DAX Open Prices; our visual analysis and ADF test revealed that the DAX Open Prices as a time series are nonstationary. Because of the COVID wave in 2020, for purposes of fitting a model, we use all results from Januray 1, 2010 to December 31, 2018. The best ARIMA model for DAX Open Prices is an ARIMA(3,1,2). The shape matches, and has a relatively low AIC of -3916.7  - it is trained and graphed on top of raw data below, overlapping almost perfectly.
+Let's analyze the results of an ARIMA model on the DAX Open Prices; our visual analysis and ADF test revealed that the DAX Open Prices as a time series are nonstationary. Because of the COVID wave in 2020, for purposes of fitting a model, we use all results from Januray 1, 2010 to December 31, 2018. The best ARIMA model for DAX Open Prices is an ARIMA(3,1,2). The shape matches, and has a relatively low AIC of -3916.7  - it is trained and graphed on top of raw data below, overlapping almost perfectly. Before measuring residuals, we compare models by $AIC = 2k -2ln(\hat{L})$, which punishes complexity and lack of goodness of fit. A lower AIC score is better.
 
 ```{python}
 #| echo: false
@@ -492,7 +492,7 @@ The AIC values for the ARIMA models of different number of parameters (ex, ARIMA
 
 \begin{table}[ht]
 \centering
-\caption{AIC for ARIMA(p,d,q) Model Comparison}
+\caption{AIC for ARIMA(p,d,q) Model Comparison, as calculated from arma\_aic\_run.py}
 \label{tab:arma_all}
 
 \begin{subtable}{0.32\textwidth}
@@ -562,7 +562,7 @@ AR Order & 0 & 1 & 2 & 3 & 4 \\
 
 
 #####  Model Diagnosis
-We check causality and invertibility in this section. Causality is when the AR process has all roots that lie outside the unit circle. Invertability is when the MA process has all roots that lie outside the unit circle. We diagnose our best solution, ARIMA (3,1,2) below.
+We check causality and invertibility in this section. Causality is when the AR process has all roots that lie outside the unit circle [@shumway2000]. Invertability is when the MA process has all roots that lie outside the unit circle. We diagnose our best solution, ARIMA (3,1,2) below - it is both causal and invertible. 
 
 ```{python}
 #| echo: false
@@ -633,11 +633,10 @@ plt.tight_layout()
 plt.show()
 
 ```
-We therefore see that all roots lie outside the unit circle. Therefore, our solution is both causal and invertible. 
 
 
 ##### Residual Analysis
-Now we look at the residuals. 
+We look at the residuals. Both the qq plot and the histogram indicate that the residuals are normally distributed $\epsilon$ $\approx$ $N(0, \sigma^2)$. This indicates that the ARIMA(3,1,2) is a good fit.
 
 ```{python}
 #| echo: false
@@ -674,7 +673,7 @@ result = model.fit()
 # Get residuals
 residuals = result.resid
 
-fig, axs = plt.subplots(1, 2, figsize=(10,3))
+fig, axs = plt.subplots(1, 2, figsize=(10,2))
 
 # Histogram
 axs[0].hist(residuals, bins=30, edgecolor='k')
@@ -692,7 +691,7 @@ plt.show()
 ```
 
 #### DAX Returns
-Let's run the same procedure for the returns. The best model is ARIMA(3, 0, 4)
+Let's run the same procedure for the returns. The best model is ARIMA(3, 0, 4). The empirical and visual data shows that the returns are stationary, so, having do differencing component $(d = 0)$ makes sense for this data.
 
 
 ```{python}
@@ -747,7 +746,7 @@ Now, we look at AIC for every combination of parameters in ARIMA(p,d,q) for DAX 
 
 \begin{table}[ht]
 \centering
-\caption{AIC for ARIMA(p,d,q) Model Comparison}
+\caption{AIC for ARIMA(p,d,q) Model Comparison, as calculated from arma\_aic\_run.py}
 \label{tab:arma_all}
 
 \begin{subtable}{0.32\textwidth}
@@ -760,11 +759,11 @@ Now, we look at AIC for every combination of parameters in ARIMA(p,d,q) for DAX 
 \cmidrule(lr){2-6}
 AR Order & 0 & 1 & 2 & 3 & 4 \\
 \midrule
-0 & 10629.7 & 7529.3 & 5005.4 & 3147.4 & 1892.3 \\
-1 & -3897.5 & -3895.6 & -3893.6 & -3893.5 & -3892.2 \\
-2 & -3895.6 & -3894 & -3892 & -3891.9 & -3891.6 \\
-3 & -3893.6 & -3892.4 & -3891.1 &  -3898.6 & -3896.7 \\
-4 & -3893.6 & -3891.3 & -3889.2 & -3896.6 & -3895.1 \\
+0 & -14028.1 & -14026.4 & -14024.4 & -14022.6 & -14024.4 \\
+1 & -14026.4 & -14024.4 & -14022.1 & -14019.3 & -14025.4 \\
+2 & -14024.4 & -14022.1 & -14020.1 & -14020.4 & -14025.2 \\
+3 & -14022.7 & -14020.6 & -14018.1 &  -14019.7 & -14029.4 \\
+4 & -14024 & -14022.1 & -14020.1 & -14017.4 & -14026 \\
 \bottomrule
 \end{tabular}
 }
@@ -781,11 +780,11 @@ AR Order & 0 & 1 & 2 & 3 & 4 \\
 \cmidrule(lr){2-6}
 AR Order & 0 & 1 & 2 & 3 & 4 \\
 \midrule
-0 & -3905.2 & -3903.3 & -3901.3 & -3901.2 & -3899.9 \\
-1 & -3903.3 & -3901.3 & -3899.3 & -3899.3 & -3901.8 \\
-2 & -3901.3 & -3899.8 & -3916.6 & -3906 & -3903.5 \\
-3 & -3901.2 & -3899.2 & -3916.7 & -3904.0 & -3903.7 \\
-4 & -3899.8 & -3901.5 & -3903.9 & -3902.4 & -3915.5 \\
+0 & -12372.7 & -14012.7 & -14011.1 & -14009.1 & -14007.2 \\
+1 & -13058.6 & -14011.1 & -14009.6 & -14005.9 & -14005.6 \\
+2 & -13350.5 & -14008.8 & -14007.2 & -14007.9 &  -14000.3 \\
+3 & -13464.5 & -14006.6 & -14004.7 & -14006.4 & -14004.5 \\
+4 & -13530.4 & -14007.8 & -13995.3 & -13982 & -13995.4 \\
 \bottomrule
 \end{tabular}
 }
@@ -802,11 +801,11 @@ AR Order & 0 & 1 & 2 & 3 & 4 \\
 \cmidrule(lr){2-6}
 AR Order & 0 & 1 & 2 & 3 & 4 \\
 \midrule
-0 & -2267.9 & -3893.6 & -3891.6& -3889.7 & -3889.5\\
-1 & -2939.6 & -3891.6 & -3889.6 & -3887.7 & -3885.7 \\
-2 & -3253.7 & -3889.7 & -3887.6 & -3887.4 & -3904.9 \\
-3 & -3378.4 & -3889.6 & -3885.7 &  -3885.2 & -3888.2 \\
-4 & -3432 & -3888.1 & -3885.7 & -3883.3 & -3898.7 \\
+0 & -9787.3 & -12356.1 & -1398 & -13976.2 & -13974.3 \\
+1 & -11163.8 & -13040.6 & -13981.9 & -13979.5 & -13978.2 \\
+2 & -11898.1 & -13327.1 & -13115.6 & -13972.6 & -13931.5 \\
+3 & -12303.4 & -13441.1 & -13333.5 &  -13173.1 & -13058.8 \\
+4 & -12519.4 & -13393.4 & -13370.9 & -13340.9 & -13269.3 \\
 \bottomrule
 \end{tabular}
 }
@@ -822,7 +821,7 @@ AR Order & 0 & 1 & 2 & 3 & 4 \\
 
 
 ##### Model Diagnosis
-Now we assess causality and invertability.
+We assess causality and invertability. All solutions lie outside the unit circle. Therefore, our model is causal and invertible. 
 
 ```{python}
 #| echo: false
@@ -899,10 +898,9 @@ plt.show()
 
 ```
 
-All solutions lie outside the unit circle. Therefore, they are all causal and invertible. 
 
-##### Residuals
-Now we look at the residuals.
+##### Residual Analysis
+We look at the residuals. Both the qq plot and the histogram indicate that the residuals are normally distributed $\epsilon$ $\approx$ $N(0, \sigma^2)$. This indicates that the ARIMA(3,0,4) is a good fit.
 
 ```{python}
 #| echo: false
@@ -962,7 +960,7 @@ plt.show()
 
 
 ### SARMA and SARIMA
-The Seasonal Autoregressive Moving Average Model (SARMA) adds a seasonal component to the ARMA and ARIMA Models. Instead of considering every lag from 1 to 35, for example, we can take lags 1, 12, and 13, repeatedly. This allows for monthly and yearly coefficients in our model, as one would expect with stock. We show a representation of SARIMAX(2,0,2)(1,0,0,12), and how well it performs below.
+The Seasonal Autoregressive Moving Average Model (SARMA) adds a seasonal component to the ARMA and ARIMA Models. Instead of considering every lag from 1 to 35, for example, we can take lags 1, 12, and 13, repeatedly [@shumway2000]. This allows for monthly and yearly coefficients in our model, as one would expect with stock. We show a representation of SARIMAX(2,0,2)(1,0,0,12), and how well it performs below.
 
 $$ By_n = y_{n-1}; B^2 y_n = y_{n-2}; B^{12} y_n = y_{n-12}  $$
 $$ y_t - \phi_1 y_{t-1} - \phi_2 y_{t-2} - \Phi_1 y_{t-12} + \Phi_1 \phi_1 y_{t-13} + \Phi_1 \phi_2 y_{t-14} = \epsilon_t + \theta_1 \epsilon_{t-1} + \theta_2 \epsilon_{t-2} $$
@@ -1041,35 +1039,40 @@ plt.tight_layout()
 plt.show()
 ```
 
-The SARIMA models for DAX Open prices and returns have AIC values of -3897.623886161021 and -14029.486910232028.
-
+The SARIMA models for DAX Open prices and returns have AIC values of -3897.6 and -14029.4.
 
 
 ### GARCH
+<<<<<<< HEAD
 
 The model selection above arguably did not sufficiently rule out a mean + white noise model for the returns data. For example, AIC favored ARMA(0, 0) as one of the top models, with the exception of models discussed above which were found to be numerically unstable. As such, we find it appropriate to shift the problem towards trying to predict the volatility of the returns, where numerical tools similar to those above can be extended to a problem where they are more likely to be successful. The GARCH(1, 1) models the following:
+=======
+>>>>>>> 2a41bb18d80bbf7d9b1bff5f75d91b01b657dde8
 
+A GARCH model can model showing the volatility of the DAX Stock. The GARCH(1, 1) is shown below.
 $$
 \begin{aligned}
-r_t &= \mu_t + \varepsilon_t \\
-\varepsilon_t &= \sigma_t e_t \\
-\sigma_t^2 & = \omega + \alpha \varepsilon_{t-1}^2 + \beta \sigma_{t-1}^2,
+r_t &= \mu_t + \varepsilon_t ; \varepsilon_t &= \sigma_t e_t ; \sigma_t^2 & = \omega + \alpha ; \varepsilon_{t-1}^2 + \beta \sigma_{t-1}^2
 \end{aligned}
 $$
+<<<<<<< HEAD
 where $r_t$ are the returns, $\mu_t$ is the mean function, $\varepsilon_t$ is the residual at time $t$, $\sigma^2_t$ is the volatility at time $t$, and $e_t$ is some iid noise distribution which we assume here is scaled to have variance 1 (say, $e_t \sim N(0, 1)$ for simplicity). 
 
 Thus, if we denote $\mathcal{F}_{t-1}$ as the $\sigma$-algebra (intuitively, information) generated by $\varepsilon_t, \sigma_{t-1}^2$ then we have 
+=======
+where $r_t$ are the returns, $\mu_t$ is the mean function, $\varepsilon_t$ is the residual at time $t$, and $e_t \sim N(0, 1)$ for simplicity. If we denote $\mathcal{F}_{t-1}$ as the $\sigma$-algebra (intuitively, information) generated by $\varepsilon_t, \sigma_{t-1}^2$ then we have 
+>>>>>>> 2a41bb18d80bbf7d9b1bff5f75d91b01b657dde8
 $$
 \begin{aligned}
 Var(r_t - \mu_t \mid \mathcal{F}_{t-1}) = Var(\varepsilon_t \mid \mathcal{F}_{t-1}) & = Var(\sigma_t e_t \mid \mathcal{F}_{t-1}) \\
 & = \sigma^2_t Var(e_t \mid \mathcal{F}_{t-1}) \qquad (\sigma_t \text{ is } \mathcal{F}_{t-1} \text{ measurable}) \\
-& = \sigma^2_t Var(e_t) \qquad (e_t \text{ is independent of } \mathcal{F}_{t-1}) \\
-& = \sigma^2_t.
+& = \sigma^2_t Var(e_t) = \sigma^2_t \qquad (e_t \text{ is independent of } \mathcal{F}_{t-1})
 \end{aligned}
 $$
 
 We see that GARCH models essentially fit an ARMA model to $\sigma^2_t$ where the moving average terms are the squared residuals of the returns series. Thus, GARCH provides us an estimate of $\sigma^2_t$, which allows us to predict periods of high or low volatility in the market. 
 
+<<<<<<< HEAD
 However, as we cannot observe volatility directly, we need a point of comparison for our GARCH estimate of $\sigma_t^2$. For simplicity, assume that $\mu_t = 0$ for all $t$. Indeed, for our log returns data, this seems appropriate, given that $ARMA(0, 0)$ was favorable via AIC, there was constant trend visible in the plot, and since $\bar{x} \approx 0.02$ for our data. Then, by the above, we have
 $$
 E(r_t^2 \mid \mathcal{F}_{t-1}) = Var(r_t \mid \mathcal{F}_{t-1}) = \sigma_t^2,
@@ -1088,6 +1091,12 @@ Thus, $r_t^2$ is a conditionally unbiased estimator for $\sigma_t^2$ (and the tw
 
 # Supplementary Material
 
+=======
+Now, for simplicity, assume that $\mu_t = 0$ for all $t$. Indeed, for our log returns data, this seems appropriate, given that $ARMA(0, 0)$ was favorable via AIC, there was constant trend visible in the plot, and since $\bar{x} \approx 0.02$ for our data. Then we have $E(r_t^2 \mid \mathcal{F}_{t-1}) = Var(r_t \mid \mathcal{F}_{t-1}) = \sigma_t^2$ and hence $E(r_t^2) = E(E(r_t^2 \mid \mathcal{F}_{t-1})) = E(\sigma_t^2)$.
+Thus, $r_t^2$ is a conditionally unbiased estimator for $\sigma_t^2$ (and the two are equal in marginal expectation). Thus, it is favorable to use $r_t^2$ as a volatility proxy.
+
+
+>>>>>>> 2a41bb18d80bbf7d9b1bff5f75d91b01b657dde8
 ```{python}
 #| echo: false
 import pandas as pd
@@ -1179,17 +1188,17 @@ realized_vol = df2.rolling(window=5).std()  # 5-day window for smoothing. Includ
 realized_vol_v2 = df2**2
 
 
-plt.figure(figsize=(10, 2))
+# plt.figure(figsize=(10, 2))
 
-plt.plot(df2.index, realized_vol, label='Realized Volatility (Smoothed Estimate)')
-plt.plot(df2.index, estimated_vol, label='Model Estimated Volatility')
+# plt.plot(df2.index, realized_vol, label='Realized Volatility (Smoothed Estimate)')
+# plt.plot(df2.index, estimated_vol, label='Model Estimated Volatility')
 
-plt.xlabel('Date')
-plt.ylabel('Volatility')
-plt.title('Realized vs Estimated Volatility')
-plt.legend()
+# plt.xlabel('Date')
+# plt.ylabel('Volatility')
+# plt.title('Realized vs Estimated Volatility')
+# plt.legend()
 
-plt.show()
+# plt.show()
 
 plt.figure(figsize=(10, 2))
 
@@ -1204,6 +1213,9 @@ plt.legend()
 plt.show()
 
 ```
+
+### Conclusion
+In conclusion, we show that modeling changes in the DAX Stock Open and Returns can be achieved through ARMA models with low AIC and mean zero residuals - these metrics indicate low complexity, goodness of fit, and low errors. We therefore solve the problem of forecasting DAX Stock prices. We expand upon it by giving insights into causality and invertibility, and we demonstrate modeling volatility with GARCH.
 
 
 
