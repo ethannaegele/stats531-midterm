@@ -24,6 +24,8 @@ format:
         \usepackage{fullpage}
 number-sections: true
 jupyter: python3
+execute:
+  engine: knitr
 ---
 
 
@@ -271,53 +273,7 @@ plt.show()
 
 ### Stationary vs Non Stationary
 
-The time series graphs for DAX Opening prices look nonstationary through visual inspection, and the returns for DAX by day look stationary. We obtain empirical data to show whether the data is stationary or not through the Augmented Dickey Fuller Test. A time series model has a unit root if its first difference is stationary. For a linear time series model, this is equivalent to a $(1-B)$ factor in the AR polynomial $\phi(B)$. The Augmented Dickey Fuller Test will look for evidence of a unit root. We use the test to verify the DAX Opening prices are nonstationary, and the returns for the DAX stock index are stationary. 
-
-$$
-\begin{aligned}
-H_0 &: \text{The process } \{x_t\} \text{ is nonstationary} \\
-&\exists\, t, h, k \text{ such that } 
-(x_t, x_{t+1}, \dots, x_{t+k}) 
-\overset{d}{\neq} 
-(x_{t+h}, x_{t+1+h}, \dots, x_{t+k+h}) \\[6pt]
-H_A &: \text{The process } \{x_t\} \text{ is stationary} \\
-&\forall\, t, h, k,\;
-(x_t, x_{t+1}, \dots, x_{t+k})
-\overset{d}{=}
-(x_{t+h}, x_{t+1+h}, \dots, x_{t+k+h})
-\end{aligned}
-$$
-
-```{python}
-#| echo: false
-import pandas as pd
-from statsmodels.tsa.stattools import adfuller
-from scipy.stats import norm
-
-def adf_summary(series, name):
-    result = adfuller(series.dropna())
-    
-    output = {
-        "Series": name,
-        "ADF Statistic": result[0],
-        "p-value": result[1],
-        "Lags Used": result[2],
-        "Observations": result[3],
-        "Critical Value (5%)": result[4]['5%'],
-        "Reject the H0?": "Yes" if result[1] <= 0.05 else "No"
-    }
-    
-    return pd.Series(output)
-
-summary_table = pd.concat([
-    adf_summary(data['Open'], "DAX Open"),
-    adf_summary(data['returns'], "DAX Returns")
-], axis=1)
-
-summary_table
-```
-
-Therefore, the DAX Opens has a p value of 0.603955, so, we fail to reject the null, so we may assume it is nonstationary. On the other hand, the DAX Return has a p value of 0 after running the test. We reject the null and there is evidence to show that the data is stationary. 
+The time series graphs for DAX Opening prices look nonstationary through visual inspection, and the returns for DAX by day look stationary. We obtain empirical data to show whether the data is stationary or not through the Augmented Dickey Fuller Test. A time series model has a unit root if its first difference is stationary. For a linear time series model, this is equivalent to a $(1-B)$ factor in the AR polynomial $\phi(B)$. The Augmented Dickey Fuller Test will look for evidence of a unit root. We use the test to verify the DAX Opening prices are nonstationary, and the returns for the DAX stock index are stationary. Performing an ADF test on DAX Opens gives a p value of 0.603955, so, we fail to reject the null, so we may assume it is nonstationary. On the other hand, the DAX Return has a p value of 0 after running the test. We reject the null and there is evidence to show that the data is stationary. (See the Supplementary Details for the full results of the ADF test.)
 
 ###  Spectral Density Function 
 
@@ -444,7 +400,8 @@ Let's analyze the results of an ARIMA model on the DAX Open Prices; our visual a
 
 ```{python}
 #| echo: false
-
+#| warning: false
+#| message: false
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
@@ -566,6 +523,8 @@ We check causality and invertibility in this section. Causality is when the AR p
 
 ```{python}
 #| echo: false
+#| warning: false
+#| message: false
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
@@ -640,6 +599,8 @@ We look at the residuals. Both the qq plot and the histogram indicate that the r
 
 ```{python}
 #| echo: false
+#| warning: false
+#| message: false
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
@@ -825,6 +786,8 @@ We assess causality and invertability. All solutions lie outside the unit circle
 
 ```{python}
 #| echo: false
+#| warning: false
+#| message: false
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
@@ -904,6 +867,8 @@ We look at the residuals. Both the qq plot and the histogram indicate that the r
 
 ```{python}
 #| echo: false
+#| warning: false
+#| message: false
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
@@ -1046,164 +1011,20 @@ The SARIMA models for DAX Open prices and returns have AIC values of -3897.6 and
 
 
 
-The model selection above arguably did not sufficiently rule out a mean + white noise model for the returns data. For example, AIC favored ARMA(0, 0) as one of the top models, with the exception of models discussed above which were found to be numerically unstable. As such, we find it appropriate to shift the problem towards trying to predict the volatility of the returns, where numerical tools similar to those above can be extended to a problem where they are more likely to be successful. The GARCH(1, 1) models the following:
-
-A GARCH model can model showing the volatility of the DAX Stock. The GARCH(1, 1) is shown below.
+The model selection above did not sufficiently rule out a mean + white noise model for the returns data. For example, AIC favored ARMA(0, 0) as the model with the second best AIC, with the exception of ARMA(3, 4) discussed above which was found to have roots very close to the unit circle and thus may not be a reliable solution. As such, we find it appropriate to shift the problem towards trying to predict the volatility of the returns, where numerical tools similar to those above can be extended to a problem where they are more likely to be successful. Particularly, a GARCH model can model showing the volatility of the DAX Stock. The GARCH(1, 1) is shown below.
 $$
 r_t = \mu_t + \varepsilon_t ; \qquad  \varepsilon_t = \sigma_t e_t; \qquad \sigma_t^2  = \omega + \alpha  \varepsilon_{t-1}^2 + \beta \sigma_{t-1}^2
 $$
 
-where $r_t$ are the returns, $\mu_t$ is the mean function, $\varepsilon_t$ is the residual at time $t$, $\sigma^2_t$ is the volatility at time $t$, and $e_t$ is some iid noise distribution which we assume here is scaled to have variance 1 (say, $e_t \sim N(0, 1)$ for simplicity). 
-
-
-
-We see that GARCH models essentially fit an ARMA model to $\sigma^2_t$ where the moving average terms are the squared residuals of the returns series. Thus, GARCH provides us an estimate of $\sigma^2_t$, which allows us to predict periods of high or low volatility in the market. 
-
-
-However, as we cannot observe volatility directly, we need a point of comparison for our GARCH estimate of $\sigma_t^2$. For simplicity, assume that $\mu_t = 0$ for all $t$. Indeed, for our log returns data, this seems appropriate, given that $ARMA(0, 0)$ was favorable via AIC, there was constant trend visible in the plot, and since $\bar{x} \approx 0.02$ for our data. Then, as we show in the Supplementary Material, $r_t^2$ is a conditionally unbiased estimator for $\sigma_t^2$ (and the two are equal in marginal expectation). Thus, in that sense, it is theoretically favorable to use $r_t^2$ as a realized volatility proxy for comparison. The disadvantage is that it has high variance. One can also use "smoothed" proxy for volatility, which is the rolling average standard deviation (or variance) of the returns over some period of time $T$, where in this paper we use $T = 5$. This reduces the variance but increases bias. We mostly stick with $r_t^2$ here, as that seems to be favored in the literature and among practitioners for daily data [springer book citation , quantinsti citation].
+where $r_t$ are the returns, $\mu_t$ is the mean function, $\varepsilon_t$ is the residual at time $t$, $\sigma^2_t$ is the volatility at time $t$, and $e_t$ is some white noise process with variance 1 (say, $e_t \sim N(0, 1)$ for simplicity). Thus, GARCH models essentially fit an ARMA model to $\sigma^2_t$, thus allowing estimates of $\sigma^2_t$. However, as we cannot observe volatility directly, we need a point of comparison for our GARCH estimate of $\sigma_t^2$. We use $r_t^2$ here, as that seems to be favored in the literature and among practitioners for daily data [@springer], [@quantinsti]. In the supplmentary material, we show that it is conditionally unbiased for $\sigma_t^2$. Smoother estimates, which are the variance of log returns over the past several days (here, we also use the past 5 days, as was suggested in [@quantinsti]) are biased but have less variability.
 
 #### Model Fitting
 
-We first needed to find an appropriate order for our GARCH model. After performing a grid search, we found GARCH(1, 1) minimized the AIC and proceeded wi
 
-We first needed to find an appropriate error distribution for the $e_t$ term as in our notation above. Financial data can often have heavy tails, and errors here may not necessarily be symmetric. We performed a grid search for four different error distributions (Normal, $t$, Skew-$t$, and Generalized Error Distribution) and found that GARCH(1, 1) minimized the AIC in all four cases. Thus, we narrowed our search to GARCH(1, 1) and compared QQ plots of the standardized residuals obtained from fitting GARCH(1, 1) to log returns from 2010-2018 for each error distribution. We found that the Skew-$t$ distribution had the best QQ plot, shown in @fig-qq-plot-garch, indicating that the error terms $e_t$ most resembled the skew-$t$ distribution for our dataset. @fig-garch-smoothed-training-comparison compares the GARCH estimate of volatility to the smoothed estimate. Thus, we see that the model was generally able to adapt to the volatility, following the highs and lows, though its estimates were a more tamed version of the realized proxy. However, using the unbiased realized volatility in @fig-garch-training-comparison shows how large errors can dominate the dataset and skew model performance. Metrics from in-sample performance the 2010-2018 data are shown below (estimated volatility and proxies are for variance):
-
-| Metric                | Unbiased Proxy | Smoothed Proxy |
-|----------------------|---------------:|---------------:|
-| Mean Absolute Error  | 1.629          | 0.784          |
-| Mean Squared Error   | 12.420         | 2.266          |
-
-: Model error comparison {#tbl-training-errors}
-
-To better assess the performance of this model, we used a rolling window forecast as suggested in [citation1, citation2], in which we used the previous 2000 days to forecast the volatility of the next day, and repeat for each day in 2019. Comparison with the smoothed estimate is shown in @fig-garch-smoothed-forecast-comparison. Our forecast metrics are shown below. 
-
-| Metric                | Unbiased Proxy | Smoothed Proxy |
-|----------------------|---------------:|---------------:|
-| Mean Absolute Error  | 0.874          | 0.432          |
-| Mean Squared Error   | 1.522          | 0.253          |
-
-: Model error comparison {#tbl-forecast-errors}
+We found that GARCH(1, 1) minimized AIC across all four error distributions we attempted. We found that the Skew-$t$ distribution had the best QQ plot of standardized residuals after model fitting, shown in @fig-qq-plot-garch, indicating that the error terms $e_t$ most resembled the skew-$t$ distribution for our dataset. @fig-garch-smoothed-training-comparison compares the GARCH estimate of volatility to the smoothed estimate. Thus, we see that the model was generally able to adapt to the volatility, following the highs and lows, though its estimates were a more tamed version of the realized proxy. However, using the unbiased realized volatility in @fig-garch-training-comparison shows how large errors can dominate the dataset and skew model performance. 
 
 
-
-
-
-```{python}
-#| echo: false
-import pandas as pd
-import matplotlib.pyplot as plt
-from statsmodels.tsa.statespace.sarimax import SARIMAX
-import numpy as np
-from statsmodels.graphics.tsaplots import plot_acf
-from statsmodels.tsa.stattools import acf
-from statsmodels.stats.diagnostic import acorr_ljungbox
-from sklearn.metrics import mean_absolute_error, mean_absolute_percentage_error, mean_squared_error
-from arch import arch_model
-
-def aic_table(data, P, Q, d=0, model_type='sarimax', dist='normal'):
-    table = np.zeros((P+1, Q+1))
-    model_type = model_type.strip().lower()
-    for p in range(P+1):
-        for q in range(Q+1):
-            try:
-                if model_type == 'sarimax':
-                    model = SARIMAX(data,
-                                    trend = 'c',
-                                    order=(p, d, q))
-                elif model_type == 'garch':
-                    # if p == 0:
-                    #     continue # NaNs only for ARCH(0)
-                    model = arch_model(data,
-                                       vol='GARCH',
-                                       p=p,
-                                       q=q,
-                                       dist=dist)
-                else:
-                    raise ValueError
-                results = model.fit()
-                table[p, q] = results.aic # sarimax, garch have aic attribute
-            except:
-                table[p, q] = np.nan
-    if model_type == 'sarimax':
-        df = pd.DataFrame(table,
-            index=[f'AR{p}' for p in range(P+1)],
-            columns=[f'MA{q}' for q in range(Q+1)])
-    elif model_type == 'garch':
-        df = pd.DataFrame(table,
-            index=[f'ARCH{p}' for p in range(P+1)], # by this, I mean there are is dependence on the p previous epsilon values
-            columns=[f'GARCH{q}' for q in range(Q+1)]) # by this, I mean there are q "GARCH" terms in that there is dependence on the q previous sigma^2 values
-    else:
-        raise ValueError
-    return df
-
-
-
-data = pd.read_csv("data/DAX_2010-2020.csv")
-data['Date'] = pd.to_datetime(data['Date'], format='%m/%d/%Y')
-data = data.sort_values('Date')
-data = data[data['Date'] < '2020-01-01']
-
-
-data.set_index('Date', inplace=True)
-data = data.asfreq('B')  # Business day frequency
-data['Open'] = data['Open'].ffill()
-
-df = data.copy()
-df = df[['Open']]
-df = df[df.index < '2019-01-01']
-df["Open"] = df["Open"].str.replace(",", "", regex=False).astype(float) # remove undesirable comma formatting in the price
-
-df2 = df.copy()
-df2 = np.log(df['Open'])
-df2 = df2.diff().dropna()
-df2 = df2 * 100
-
-
-
-# aic_table(df2, P = 4, Q = 4, model_type='garch')
-
-
-model_g11 = arch_model(df2,
-                        vol='GARCH',
-                        p=1,
-                        q=1).fit(disp="off")
-# print(model_g11.summary())
-
-estimated_vol = model_g11.conditional_volatility
-
-# credit to https://blog.quantinsti.com/garch-gjr-garch-volatility-forecasting-python/ for this suggestion
-realized_vol = df2.rolling(window=5).std()  # 5-day window for smoothing. Includes data from time t
-
-# comparing GARCH conditional volatility estimate to r_t^2 as this seems to be more common in literature?
-# for example, see https://link.springer.com/chapter/10.1007/978-3-030-46347-2_8
-realized_vol_v2 = df2**2
-
-
-# plt.figure(figsize=(10, 2))
-
-# plt.plot(df2.index, realized_vol, label='Realized Volatility (Smoothed Estimate)')
-# plt.plot(df2.index, estimated_vol, label='Model Estimated Volatility')
-
-# plt.xlabel('Date')
-# plt.ylabel('Volatility')
-# plt.title('Realized vs Estimated Volatility')
-# plt.legend()
-
-# plt.show()
-
-plt.figure(figsize=(10, 2))
-
-plt.plot(df2.index, realized_vol_v2, label='Realized Volatility (Squared log returns)')
-plt.plot(df2.index, estimated_vol**2, label='Model Estimated Volatility')
-
-plt.xlabel('Date')
-plt.ylabel('Volatility')
-plt.title('Realized vs Estimated Volatility')
-plt.legend()
-
-plt.show()
-
-```
+To better assess the performance of this model, we used a rolling window forecast as suggested in [@brownlee], [@quantinsti], in which we used the previous 2000 days to forecast the volatility of the next day, and repeat for each day in 2019. Comparison with the smoothed estimate is shown in @fig-garch-smoothed-forecast-comparison. As said above, the model responds to volatility changes but less so to the magnitude of changes. Metrics from the 2010-2018 in-sample performance and for the 2019 rolling window forecast are shown below (estimated volatility and proxies are for variance, not SD):
 
 ```{python}
 #| echo: false
@@ -1313,6 +1134,9 @@ def get_metrics(y_true, y_pred):
 
 ```{python}
 #| echo: false
+#| warning: false
+#| message: false
+#| output: false
 model_g11_skewt = arch_model(df2,
                         vol='GARCH',
                         p=1,
@@ -1371,22 +1195,37 @@ garch_vol_forecast_2019 = pd.Series(
 
 ```{python}
 #| echo: false
+#| warning: false
+#| message: false
+#| fig-pos: "H"
 #| label: fig-garch-smoothed-forecast-comparison
 #| fig-cap: "Comparison of Smoothed Volatility to Estimated Volatility"
+
+
+
 realized_vol_2019_smooth = df_test.rolling(window=5).std()
 
-plt.clf()
-plt.figure(figsize=(5, 3))
+fig, ax = plt.subplots(figsize=(7, 2.2))
 
-plt.plot(df_test.index[4:], realized_vol_2019_smooth.iloc[4:]**2, label='Realized Volatility (Smooth Proxy)')
-plt.plot(df_test.index[4:], garch_vol_forecast_2019.iloc[4:], label='1-Step Forecasted Volatility')
+ax.plot(
+    df_test.index[4:],
+    (realized_vol_2019_smooth.iloc[4:] ** 2),
+    label="Realized Volatility (Smooth Proxy)"
+)
+ax.plot(
+    df_test.index[4:],
+    garch_vol_forecast_2019.iloc[4:],
+    label="1-Step Forecasted Volatility"
+)
 
-plt.xlabel('Date')
-plt.ylabel('Volatility')
-plt.title('Realized vs Forecasted Volatility')
-plt.legend()
+ax.set_xlabel("Date")
+ax.set_ylabel("Volatility")
+ax.set_title("Realized vs Forecasted Volatility")
+ax.legend()
 
+fig.tight_layout()
 plt.show()
+plt.close(fig)
 ```
 
 
@@ -1394,14 +1233,82 @@ plt.show()
 
 # Connection to Previous Projects
 
-As with several other previous STATS 531 projects [example 1, example 2, example 3], we chose to study financial time series data. One of our primary goals, however, was to try and extend the work of [mainexample], which also tried to model volatility in stock returns. However, we tried to overcome some of the limitations in their study by first, not using GARCH to analyze volatility of volatility, as, though that may be statistically interesting, is most likely misspecified by GARCH, as the reviewer pointed out [reviewcitation]. Next, [mainexample] was limited in part by the fact that their QQ residual plots throughout their paper indicated misspecification due to heavy tails. They indicated that they attempted to use $t$-distributed errors but were unable to due to failures in "model explanation and diagnosis". By identifying and implementing an error distribution that fails less drastically at the tails using the skewed $t$ distribution, as shown in the QQ plot for our implementation @fig-qq-plot-garch, we were able to at least partially overcome a key limitation in their analysis. 
+As with several other previous STATS 531 projects such as [@gold25], [@spvol25], and [@apple24], we wanted to study financial time series data while including volatility forecasting using models such as GARCH. However, we tried to overcome some of the limitations in previous reports by trying not to rely on models with poor diagnostics, such as in [@vanguard25] and [@spvol25]. We also wanted to build upon [@spvol25] by  forecasting volatility separately, not forecasting log returns themselves with ARMA-GARCH as in [@gold25] or [@apple24]. We wanted to overcome the heavy tail misspecification in the residual plots of [@spvol25] by using appropriate error distributions in our volatility forecasting.
 
+# Conclusion
+
+In conclusion, we show that modeling changes in the DAX Stock Open and Returns can be achieved through ARMA models with low AIC and mean zero residuals - these metrics indicate low complexity, goodness of fit, and low errors. We therefore solve the problem of forecasting DAX Stock prices. We expand upon it by giving insights into causality and invertibility, and we demonstrate modeling volatility with GARCH.
 
 
 # Supplementary Material
 
-Now, for simplicity, assume that $\mu_t = 0$ for all $t$. Indeed, for our log returns data, this seems appropriate, given that $ARMA(0, 0)$ was favorable via AIC, there was constant trend visible in the plot, and since $\bar{x} \approx 0.02$ for our data. Then we have $E(r_t^2 \mid \mathcal{F}_{t-1}) = Var(r_t \mid \mathcal{F}_{t-1}) = \sigma_t^2$ and hence $E(r_t^2) = E(E(r_t^2 \mid \mathcal{F}_{t-1})) = E(\sigma_t^2)$.
-Thus, $r_t^2$ is a conditionally unbiased estimator for $\sigma_t^2$ (and the two are equal in marginal expectation). Thus, it is favorable to use $r_t^2$ as a volatility proxy.
+## ADF Test Details
+
+The ADF test results were as follows:
+
+
+
+$$
+\begin{aligned}
+H_0 &: \text{The process } \{x_t\} \text{ is nonstationary} \\
+&\exists\, t, h, k \text{ such that } 
+(x_t, x_{t+1}, \dots, x_{t+k}) 
+\overset{d}{\neq} 
+(x_{t+h}, x_{t+1+h}, \dots, x_{t+k+h}) \\[6pt]
+H_A &: \text{The process } \{x_t\} \text{ is stationary} \\
+&\forall\, t, h, k,\;
+(x_t, x_{t+1}, \dots, x_{t+k})
+\overset{d}{=}
+(x_{t+h}, x_{t+1+h}, \dots, x_{t+k+h})
+\end{aligned}
+$$
+
+```{python}
+#| echo: false
+import pandas as pd
+from statsmodels.tsa.stattools import adfuller
+from scipy.stats import norm
+
+def adf_summary(series, name):
+    result = adfuller(series.dropna())
+    
+    output = {
+        "Series": name,
+        "ADF Statistic": result[0],
+        "p-value": result[1],
+        "Lags Used": result[2],
+        "Observations": result[3],
+        "Critical Value (5%)": result[4]['5%'],
+        "Reject the H0?": "Yes" if result[1] <= 0.05 else "No"
+    }
+    
+    return pd.Series(output)
+
+data = pd.read_csv("data/DAX_2010-2020.csv")
+
+data['Date'] = pd.to_datetime(data['Date'], format='%m/%d/%Y')
+data = data.sort_values('Date')
+data['Open'] = (
+    data['Open']
+    .str.replace('.', '', regex=False)
+    .str.replace(',', '.', regex=False)
+    .astype(float)
+)
+data.set_index('Date', inplace=True)
+
+data['returns'] = np.log(data['Open']) - np.log(data['Open'].shift(1))
+
+log_returns = np.log(data['Open'] / data['Open'].shift(1)).dropna()
+
+
+summary_table = pd.concat([
+    adf_summary(data['Open'], "DAX Open"),
+    adf_summary(data['returns'], "DAX Returns")
+], axis=1)
+
+summary_table
+```
+
 
 ## Proof that $\sigma_t^2 = Var(r_t - \mu_t \mid \mathcal{F}_{t-1})$
 
@@ -1454,6 +1361,7 @@ plt.show()
 ```{python}
 #| echo: false
 #| label: fig-garch-smoothed-training-comparison
+#| fig-pos: "H"
 #| fig-cap: "Comparison of Smoothed Volatility to Estimated Volatility"
 estimated_vol_skewt = model_g11_skewt.conditional_volatility
 # credit to https://blog.quantinsti.com/garch-gjr-garch-volatility-forecasting-python/ for this suggestion
@@ -1479,6 +1387,7 @@ plt.show()
 ```{python}
 #| echo: false
 #| label: fig-garch-training-comparison
+#| fig-pos: "H"
 #| fig-cap: "Comparison of Realized Volatility to Estimated Volatility"
 
 realized_vol_v2 = df2**2
@@ -1505,8 +1414,6 @@ plt.show()
 
 
 
-### Conclusion
-In conclusion, we show that modeling changes in the DAX Stock Open and Returns can be achieved through ARMA models with low AIC and mean zero residuals - these metrics indicate low complexity, goodness of fit, and low errors. We therefore solve the problem of forecasting DAX Stock prices. We expand upon it by giving insights into causality and invertibility, and we demonstrate modeling volatility with GARCH.
 
 
 
