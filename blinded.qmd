@@ -1301,7 +1301,7 @@ knitr::asis_output(paste0(
 
 # Connection to Previous Projects
 
-As with several other previous STATS 531 projects such as [@gold25], [@spvol25], and [@apple24], we wanted to study financial time series data while including volatility forecasting using models such as GARCH. We also wanted to build upon [@spvol25] by forecasting volatility separately, not forecasting log returns themselves with ARMA-GARCH as in [@gold25] or [@apple24]. We wanted to overcome the heavy tail misspecification in the residual plots of [@spvol25] by using appropriate error distributions in our volatility forecasting, which we seem to have been more successful in.
+As with several other previous STATS 531 projects such as [@gold25], [@spvol25], and [@apple24], we wanted to study financial time series data while including volatility forecasting using models such as GARCH. We also wanted to build upon [@spvol25] by forecasting volatility separately, not forecasting log returns themselves with ARMA-GARCH as in [@gold25] or [@apple24]. We wanted to overcome the heavy tail misspecification in the residual plots of [@spvol25] by using appropriate error distributions in our volatility forecasting, which we seem to have been more successful in, as their heavy tail issue was never quite resolved whereas our skew-$t$ distribution provided a more appropriate standardized residual plot.
 
 # Conclusion
 
