@@ -2,6 +2,8 @@
 title: "STATS 531 - Midterm Project"
 output: pdf_document
 bibliography: references.bib
+nocite: |
+  @*
 format:
   pdf:
     include-in-header:
@@ -1513,7 +1515,6 @@ plot_acf(df2**2, ax=ax)
 plt.show()
 plt.close(fig)
 ```
-
 
 
 
